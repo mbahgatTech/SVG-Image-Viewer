@@ -43,8 +43,8 @@ SVG* createSVG(const char* fileName) {
     tempSVG -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
     tempSVG -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
     tempSVG -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
-    tempSVG -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
-    
+    tempSVG -> otherAttributes = createAttributeList(svgNode, NULL, 0);
+
     // free svgImg object
     xmlFreeDoc(svgImg);
     
@@ -130,16 +130,27 @@ void deleteAttribute( void* data) {
 
 char* attributeToString(void* data) {
     Attribute *tempAttr = (Attribute *) data;
+
+    // check for invalid attribute
+    if (tempAttr == NULL || tempAttr -> name == NULL) {
+        return NULL;
+    }
+
     // enough space for name and value followed by new lines
     char *tempString = malloc(sizeof(char) * (strlen(tempAttr -> name) + 2));
-    
+
+    // return null if malloc failed
+    if (tempString == NULL) {
+        return NULL;
+    }
     // concatenate name and value followed by new lines to string and return it
     strcpy(tempString, tempAttr -> name);
     strcat(tempString, "\n");
 
     // if value is NULl just return the string with the name
-    if (tempAttr -> value == NULL)
+    if (tempAttr -> value == NULL || strcmp(tempAttr -> value, "") == 0) {
         return tempString;
+    }
     
     // otherwise reallocate memory for the tempString to fit in the value
     tempString = realloc(tempString, sizeof(char) * 
