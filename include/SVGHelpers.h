@@ -4,3 +4,5 @@
 char *findTitle (xmlNode *node);
 
 char *findDesc (xmlNode *node);
+
+char *floatToString(float number);

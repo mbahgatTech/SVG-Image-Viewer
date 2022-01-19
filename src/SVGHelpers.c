@@ -42,3 +42,14 @@ char *findDesc (xmlNode *node) {
 
     return NULL;
 }
+
+
+char *floatToString(float number) {
+    // 50 chars should be more than enough for any number
+    char *numString = malloc(sizeof(float) * 50); 
+    sprintf(numString, "%f", number);
+
+    numString = realloc(numString, sizeof(char) * (strlen(numString) + 1)); 
+
+    return numString;
+}

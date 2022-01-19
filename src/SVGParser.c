@@ -39,11 +39,11 @@ SVG* createSVG(const char* fileName) {
     strncpy(tempSVG -> description, tempPtr, 255);
 
     // initialize lists with NULL for now
-    tempSVG -> rectangles = NULL;
-    tempSVG -> circles = NULL;
-    tempSVG -> paths = NULL;
-    tempSVG -> groups = NULL;
-    tempSVG -> otherAttributes = NULL;
+    tempSVG -> rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+    tempSVG -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
+    tempSVG -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
+    tempSVG -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    tempSVG -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
     
     // free svgImg object
     xmlFreeDoc(svgImg);
@@ -75,26 +75,12 @@ char* SVGToString(const SVG* img) {
 }
 
 void deleteSVG(SVG* img) {
-    void *elem = NULL;
-    ListIterator iter;
-    
     // free lists 
-    free(img -> rectangles);
-    free(img -> circles); 
-    free(img -> paths);
-    free(img -> groups);
-
-    // iterate through all attributes and delete them
-    if (img -> otherAttributes != NULL) {
-        iter = createIterator(img -> otherAttributes);
-        elem = iter.current;
-    }
-        
-    while (elem != NULL) {
-        deleteAttribute(elem);
-        elem = nextElement(&iter);
-    }
-    free(img -> otherAttributes);
+    freeList(img -> rectangles);
+    freeList(img -> circles); 
+    freeList(img -> paths);
+    freeList(img -> groups);
+    freeList(img -> otherAttributes);
 
     free(img);
 }
@@ -215,7 +201,7 @@ char* rectangleToString(void* data){
 }
 
 int compareRectangles(const void *first, const void *second){
-    return 0;
+    return strcmp(rectangleToString((Rectangle *)first), rectangleToString((Rectangle *)second));
 }
 
 void deleteCircle(void* data){
@@ -242,22 +228,62 @@ void deleteCircle(void* data){
 
 char* circleToString(void* data){
     // check if circle ptr is null
-    // if (data == NULL) {
+    if (data == NULL) {
         return NULL;
-    // }
+    }
     
-    // //easier access to data's elements without having to cast to Circle * every time
-    // Circle *temp = (Circle *)data;
-    // char *circleString = malloc(sizeof(char));
-    // char *tempString = malloc (sizeof(char) * 9);
+    //easier access to data's elements without having to cast to Circle * every time
+    Circle *temp = (Circle *)data;
+    char *tempString = floatToString(temp -> cx);
+    char *circleString = malloc(sizeof(char) * (strlen(tempString) + 2));
 
-    // gcvt(temp -> x, 6, circleString);
-    // gcvt(temp -> y, 10, tempString);
-    // strcat(circleString, tempString);
+    // concatenate circle elements to the string
+    strcpy(circleString, tempString);
+    strcat(circleString, "\n");
+    free(tempString); 
+    
+    tempString = floatToString(temp -> cy);
+    // reallocate memory for circleString and tempString plus new line after.
+    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 2));
+    strcat(circleString, tempString);
+    strcat(circleString, "\n");
+    free(tempString);
 
+    tempString = floatToString(temp -> r);
+    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 2));
+    strcat(circleString, tempString);
+    strcat(circleString, "\n");
+    free(tempString); // free memory from floatToString call
+    
+    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(temp -> units) + 2));
+    strcat(circleString, temp -> units);
+    strcat(circleString, "\n");
 
-    // strcpy(circleString, temp -> x)
+    // concatenate list of attributes' strings to the circleString
+    void * elem;
+    ListIterator iter;
 
+    // in case otherAttributes is NULL (if SVG created properly it shouldn't) 
+    //  return the string with cx, cy, r and units
+    if (temp -> otherAttributes == NULL) {
+        return circleString;
+    }
+    
+    // iterator through list of attributes
+    iter = createIterator(temp -> otherAttributes);
+    elem = iter.current;
+    
+    // get attribute string and  reallocate circleString to fit concatenation
+    while(elem != NULL) {
+        tempString = attributeToString(elem);
+        circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 1));
+        strcat(circleString, tempString);
+        free(tempString);
+
+        elem = nextElement(&iter);
+    }
+
+    return circleString;
 }
 
 // returns 0 if both circles are equal, non-zero otherwise (follows strcmp convention)
@@ -273,6 +299,7 @@ char* pathToString(void* data){
     return NULL;
 }
 
+// return 1 if not equal, 0 if equal
 int comparePaths(const void *first, const void *second){
-    return 0;
+    return strcmp(pathToString((Path *)first), pathToString((Path *)second));
 }
