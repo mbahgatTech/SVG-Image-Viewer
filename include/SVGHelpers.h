@@ -10,3 +10,7 @@ char *floatToString(float number);
 List *createAttributeList(xmlNode *node, char **coreAttributes, int length);
 
 List *createRectangleList(xmlNode *img);
+
+List *createCircleList(xmlNode *img);
+
+List *createPathList(xmlNode *img);

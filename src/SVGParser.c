@@ -43,8 +43,8 @@ SVG* createSVG(const char* fileName) {
 
     // initialize lists with NULL for now
     tempSVG -> rectangles = createRectangleList(svgNode);
-    tempSVG -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
-    tempSVG -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
+    tempSVG -> circles = createCircleList(svgNode);
+    tempSVG -> paths = createPathList(svgNode);
     tempSVG -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
     tempSVG -> otherAttributes = createAttributeList(svgNode, NULL, 0);
 
@@ -78,6 +78,21 @@ char* SVGToString(const SVG* img) {
 
     // copy SVG lists
     char *temp = toString(img -> rectangles);
+    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+    strcat(svgString, temp);
+    free(temp);
+
+    temp = toString(img -> circles);
+    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+    strcat(svgString, temp);
+    free(temp);
+
+    temp = toString(img -> paths);
+    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+    strcat(svgString, temp);
+    free(temp);
+
+    temp = toString(img -> groups);
     svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
     strcat(svgString, temp);
     free(temp);
@@ -224,11 +239,13 @@ void deleteRectangle(void* data){
 }
 
 char* rectangleToString(void* data){
+    // cant print null rectangle
     if (data == NULL) {
         return NULL;
     }
     Rectangle *rect = (Rectangle *)data;
-
+    
+    // call floatToString on x,y, width and height and concatenate them to rectString
     char *temp = floatToString(rect -> x);
     char *rectString = malloc(sizeof(char) * strlen(temp) + 2);
     strcpy(rectString, temp);
@@ -252,9 +269,9 @@ char* rectangleToString(void* data){
     strcat(rectString, temp);
     strcat(rectString, "\n");
     free(temp);
-
+    
+    // add list of otherAttributes to the string and return it
     temp = toString(rect -> otherAttributes);
-    printf("Hello + %s\n", temp);
     rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 1));
     strcat(rectString, temp);
     free(temp);
@@ -267,25 +284,8 @@ int compareRectangles(const void *first, const void *second){
 }
 
 void deleteCircle(void* data){
-    Circle *circle = (Circle *)data;
-    void *elem = NULL;
-    ListIterator iter;
-
-    // initialize an iterator over the circle's otherAttributes
-    if (circle -> otherAttributes != NULL) {
-        iter = createIterator(circle -> otherAttributes);
-        elem = iter.current;
-    }
-    
-    // iterate over the list and delete the attribute
-    while (elem != NULL) {
-        deleteAttribute(elem);
-        elem = nextElement(&iter);
-    }
-
-    // free list and circle structure
-    free(circle -> otherAttributes);
-    free(circle);
+    freeList(((Circle *)data) -> otherAttributes);
+    free(data);
 }
 
 char* circleToString(void* data){
@@ -322,28 +322,10 @@ char* circleToString(void* data){
     strcat(circleString, "\n");
 
     // concatenate list of attributes' strings to the circleString
-    void * elem;
-    ListIterator iter;
-
-    // in case otherAttributes is NULL (if SVG created properly it shouldn't) 
-    //  return the string with cx, cy, r and units
-    if (temp -> otherAttributes == NULL) {
-        return circleString;
-    }
-    
-    // iterator through list of attributes
-    iter = createIterator(temp -> otherAttributes);
-    elem = iter.current;
-    
-    // get attribute string and  reallocate circleString to fit concatenation
-    while(elem != NULL) {
-        tempString = attributeToString(elem);
-        circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 1));
-        strcat(circleString, tempString);
-        free(tempString);
-
-        elem = nextElement(&iter);
-    }
+    tempString = toString(temp -> otherAttributes);
+    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 1));
+    strcat(circleString, tempString);
+    free(tempString);
 
     return circleString;
 }
@@ -354,11 +336,35 @@ int compareCircles(const void *first, const void *second){
 }
 
 void deletePath(void* data){
-    
+    freeList(((Path *)data) -> otherAttributes);
+    free(data);
 }
 
 char* pathToString(void* data){
-    return NULL;
+    // cant print null path
+    if (data == NULL) {
+        return NULL;
+    }
+
+    Path *path = (Path *)data;
+    char *pathString;
+    char *tempString;
+
+    // in case no otherAttributes were present copy empty string to tempString 
+    if (path -> otherAttributes == NULL) {
+        tempString = malloc(sizeof(char));
+        strcpy(tempString, "");
+    }
+    else {
+        tempString = toString(path -> otherAttributes);
+    }
+    
+    pathString = malloc(sizeof(char) * (strlen(path -> data) + strlen(tempString) + 2));
+    strcpy(pathString, tempString);
+    strcat(pathString, "\n");
+    strcat(pathString, path -> data);
+
+    return pathString;
 }
 
 // return 1 if not equal, 0 if equal
