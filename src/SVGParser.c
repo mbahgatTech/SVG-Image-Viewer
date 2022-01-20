@@ -18,6 +18,11 @@ SVG* createSVG(const char* fileName) {
     if (svgNode == NULL || tempSVG == NULL) {
         return NULL;
     }
+    
+    // initialize string with empty values
+    strcpy(tempSVG -> namespace, "");
+    strcpy(tempSVG -> title, "");
+    strcpy(tempSVG -> description, "");
 
     // copy only the first 255 chars or length of the first namespace to fit into
     // our SVG namespace element. Note: only 1 namesapce is assumed in this program
@@ -26,20 +31,18 @@ SVG* createSVG(const char* fileName) {
 
     char *tempPtr = findTitle(svgNode);
     // copy first 255 or length chars of title
-    if (tempPtr == NULL) {
-        return NULL;
+    if (tempPtr != NULL) {
+        strncpy(tempSVG -> title, tempPtr, 255);
     }
-    strncpy(tempSVG -> title, tempPtr, 255);
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
-    if (tempPtr == NULL) {
-        return NULL;
+    if (tempPtr != NULL) {
+        strncpy(tempSVG -> description, tempPtr, 255);
     }
-    strncpy(tempSVG -> description, tempPtr, 255);
 
     // initialize lists with NULL for now
-    tempSVG -> rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+    tempSVG -> rectangles = createRectangleList(svgNode);
     tempSVG -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
     tempSVG -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
     tempSVG -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
@@ -55,22 +58,35 @@ SVG* createSVG(const char* fileName) {
 
 char* SVGToString(const SVG* img) {
     // enough initial space for namespace, title and desc seperated by new lines  
-    char *svgString = malloc(sizeof(char) * (
-        strlen(img -> namespace) +
-        strlen(img -> title) + 
-        strlen(img -> description) + 4)
-        );
+    char *svgString = malloc(sizeof(char) * (strlen(img -> namespace) + 2));
     
     // copy SVG data elements
     strcpy(svgString, img -> namespace);
     strcat(svgString, "\n");
+
+    svgString = realloc(svgString, sizeof(char) * (
+        strlen(svgString) + strlen(img -> title) + 2)
+    );
     strcat(svgString, img -> title);
     strcat(svgString, "\n");
+
+    svgString = realloc(svgString, sizeof(char) * (
+        strlen(svgString) + strlen(img -> description) + 2)
+    );
     strcat(svgString, img -> description);
     strcat(svgString, "\n");
 
     // copy SVG lists
+    char *temp = toString(img -> rectangles);
+    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+    strcat(svgString, temp);
+    free(temp);
 
+    temp = toString(img -> otherAttributes);
+    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+    strcat(svgString, temp);
+    free(temp);
+    
     return svgString;
 }
 
@@ -145,7 +161,7 @@ char* attributeToString(void* data) {
     }
     // concatenate name and value followed by new lines to string and return it
     strcpy(tempString, tempAttr -> name);
-    strcat(tempString, "\n");
+    strcat(tempString, " ");
 
     // if value is NULl just return the string with the name
     if (tempAttr -> value == NULL || strcmp(tempAttr -> value, "") == 0) {
@@ -154,10 +170,9 @@ char* attributeToString(void* data) {
     
     // otherwise reallocate memory for the tempString to fit in the value
     tempString = realloc(tempString, sizeof(char) * 
-        (strlen(tempAttr -> name)  + strlen(tempAttr -> value) + 3));    
+        (strlen(tempAttr -> name)  + strlen(tempAttr -> value) + 2));    
 
     strcat(tempString, tempAttr -> value);
-    strcat(tempString, "\n");
 
     return tempString;
 }
@@ -204,11 +219,47 @@ int compareGroups(const void *first, const void *second){
 }
 
 void deleteRectangle(void* data){
-
+    freeList(((Rectangle *)data) -> otherAttributes);
+    free(data);
 }
 
 char* rectangleToString(void* data){
-    return NULL;
+    if (data == NULL) {
+        return NULL;
+    }
+    Rectangle *rect = (Rectangle *)data;
+
+    char *temp = floatToString(rect -> x);
+    char *rectString = malloc(sizeof(char) * strlen(temp) + 2);
+    strcpy(rectString, temp);
+    strcat(rectString, "\n");
+    free(temp);
+    
+    temp = floatToString(rect -> y);
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    strcat(rectString, temp);
+    strcat(rectString, "\n");
+    free(temp);
+    
+    temp = floatToString(rect -> width);
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    strcat(rectString, temp);
+    strcat(rectString, "\n");
+    free(temp);
+
+    temp = floatToString(rect -> height);
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    strcat(rectString, temp);
+    strcat(rectString, "\n");
+    free(temp);
+
+    temp = toString(rect -> otherAttributes);
+    printf("Hello + %s\n", temp);
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 1));
+    strcat(rectString, temp);
+    free(temp);
+
+    return rectString;
 }
 
 int compareRectangles(const void *first, const void *second){
