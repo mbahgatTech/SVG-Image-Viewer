@@ -55,6 +55,37 @@ char *floatToString(float number) {
     return numString;
 }
 
+float getUnits(char *units, char *string){
+    if (string == NULL || units == NULL) {
+        return -1; // indicates error
+    }
+
+    char *unitString = NULL; 
+    int i = 0;
+    for (i = 0; i < strlen(string); i++) {
+        // check if the current char is a part of a float number
+        if (!isdigit(string[i]) && string[i] != '.') {
+            // this basically starts unitString from the first non digit/non period char
+            unitString = string + sizeof(char) * i;
+            break;
+        }
+    }
+    
+    // copy units into passed by reference units array
+    if (unitString != NULL) {
+        strcpy(units, unitString);
+    }
+    // reuse unitString for value of float
+    unitString = malloc(sizeof(char) * (strlen(string) + 1));
+    strcpy(unitString, string); //now u can exclude units from the string
+    unitString[i] = '\0';
+
+    float value = atof(unitString);
+    free(unitString);
+
+    return value;
+}
+
 List *createAttributeList(xmlNode *node, char **coreAttributes, int length) {
     List *attributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
     Attribute **temp = malloc(sizeof(Attribute *));
@@ -109,10 +140,10 @@ List *createRectangleList(xmlNode *img) {
     if (img == NULL || img -> properties == NULL) {
         return NULL;
     }
-    
     List *rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
     Rectangle **rect = malloc(sizeof(Rectangle *));
     char **coreAttr = malloc(sizeof(char *) * 4);
+    char *tempUnits;
 
     // add core attributes to an array of strings
     coreAttr[0] = malloc(sizeof(char) * 2);
@@ -134,20 +165,21 @@ List *createRectangleList(xmlNode *img) {
         rect = realloc(rect, sizeof(Rectangle *) * (counter + 1));
         rect[counter] = malloc(sizeof(Rectangle));
         strcpy(rect[counter] -> units, "");
+        tempUnits = rect[counter] -> units;
 
         // initialize core rectangle properties 
         for (xmlAttr *attr = child-> properties; attr; attr = attr -> next) {
             if (strcmp((char *)attr -> name, "x") == 0) {
-                rect[counter] -> x = atof((char *)attr -> children -> content);
+                rect[counter] -> x = getUnits(tempUnits, (char *)attr -> children -> content);
             }
             else if (strcmp((char *)attr -> name, "y") == 0) {
-                rect[counter] -> y = atof((char *)attr -> children -> content);
+                rect[counter] -> y = getUnits(tempUnits, (char *)attr -> children -> content);
             }
             else if (strcmp((char *)attr -> name, "width") == 0) {
-                rect[counter] -> width = atof((char *)attr -> children -> content);
+                rect[counter] -> width = getUnits(tempUnits, (char *)attr -> children -> content);
             }
             else if (strcmp((char *)attr -> name, "height") == 0) {
-                rect[counter] -> height = atof((char *)attr -> children -> content);
+                rect[counter] -> height = getUnits(tempUnits, (char *)attr -> children -> content);
             }   
         } 
 
@@ -174,6 +206,7 @@ List *createCircleList(xmlNode *img) {
     List *circleList = initializeList(&circleToString, &deleteCircle, &compareCircles);
     Circle **circles = malloc(sizeof(Circle *));
     char **coreAttr = malloc(sizeof(char *) * 3);
+    char *tempUnits;
 
     // add core attributes to an array of strings
     coreAttr[0] = malloc(sizeof(char) * 3);
@@ -193,17 +226,18 @@ List *createCircleList(xmlNode *img) {
         circles = realloc(circles, sizeof(Circle *) * (counter + 1));
         circles[counter] = malloc(sizeof(Circle));
         strcpy(circles[counter] -> units, "");
+        tempUnits = circles[counter] -> units;
 
         // initialize core circle properties 
         for (xmlAttr *attr = child-> properties; attr; attr = attr -> next) {
             if (strcmp((char *)attr -> name, "cx") == 0) {
-                circles[counter] -> cx = atof((char *)attr -> children -> content);
+                circles[counter] -> cx = getUnits(tempUnits, (char *)attr -> children -> content);
             }
             else if (strcmp((char *)attr -> name, "cy") == 0) {
-                circles[counter] -> cy = atof((char *)attr -> children -> content);
+                circles[counter] -> cy = getUnits(tempUnits, (char *)attr -> children -> content);
             }
             else if (strcmp((char *)attr -> name, "r") == 0) {
-                circles[counter] -> r = atof((char *)attr -> children -> content);
+                circles[counter] -> r = getUnits(tempUnits, (char *)attr -> children -> content);
             }
         } 
 
@@ -268,4 +302,43 @@ List *createPathList(xmlNode *img) {
     free(paths);
 
     return pathList;
+}
+
+List *createGroupList(xmlNode *node) {
+    if (node == NULL) {
+        return NULL;
+    }
+    
+    List *groupList = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    Group **groups = malloc(sizeof(Group *));
+
+    int counter = 0;
+    // loop through all children of the node and look for g elements
+    for (xmlNode *child = node -> children; child; child = child -> next) {
+        if (strcmp((char *)child -> name, "g") != 0) {
+            continue;
+        }
+        
+        // reallocate memory for a new Group
+        groups = realloc(groups, sizeof(Group *) * (counter + 1));
+        groups[counter] = malloc(sizeof(Group));
+
+        // create a list of all attributes on the g element since were not storing 
+        // any core attributes in strcut elements
+        groups[counter] -> otherAttributes = createAttributeList(child, NULL, 0);
+
+        // create lists of other shapes inside this group element and store ptrs in the struct
+        groups[counter] -> rectangles = createRectangleList(child);
+        groups[counter] -> circles = createCircleList(child);
+        groups[counter] -> paths = createPathList(child);        
+        groups[counter] -> groups = createGroupList(child);
+
+        insertBack(groupList, groups[counter]);
+        counter++;
+    }
+
+    // free array of pointers to Group objects
+    free(groups);
+
+    return groupList;
 }

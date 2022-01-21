@@ -45,7 +45,7 @@ SVG* createSVG(const char* fileName) {
     tempSVG -> rectangles = createRectangleList(svgNode);
     tempSVG -> circles = createCircleList(svgNode);
     tempSVG -> paths = createPathList(svgNode);
-    tempSVG -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    tempSVG -> groups = createGroupList(svgNode);
     tempSVG -> otherAttributes = createAttributeList(svgNode, NULL, 0);
 
     // free svgImg object
@@ -96,7 +96,7 @@ char* SVGToString(const SVG* img) {
     svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
     strcat(svgString, temp);
     free(temp);
-
+    
     temp = toString(img -> otherAttributes);
     svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
     strcat(svgString, temp);
@@ -222,15 +222,55 @@ int compareAttributes(const void *first, const void *second){
 
 
 void deleteGroup(void* data){
-    
+    // free lists inside the group struct
+    freeList(((Group *)data) -> rectangles);
+    freeList(((Group *)data) -> circles);
+    freeList(((Group *)data) -> paths);
+    freeList(((Group *)data) -> groups);
+    freeList(((Group *)data) -> otherAttributes);
+
+    // free pointer to group 
+    free(data);
 }
 
-char* groupToString(void* data){
-    return NULL;
+char* groupToString(void* data) {
+    if (data == NULL) {
+        return NULL;
+    }
+    Group *group = (Group *)data;
+
+    // copy list strings into groupString 
+    char *tempString = toString(group -> rectangles);
+    char *groupString = malloc(sizeof(char) * (strlen(tempString) + 1));
+
+    strcpy(groupString, tempString);
+    free(tempString);
+    
+    tempString = toString(group -> circles);
+    groupString = realloc(groupString, sizeof(char) * (strlen(groupString) + strlen(tempString) + 1));
+    strcat(groupString, tempString);
+    free(tempString);
+
+    tempString = toString(group -> paths);
+    groupString = realloc(groupString, sizeof(char) * (strlen(groupString) + strlen(tempString) + 1));
+    strcat(groupString, tempString);
+    free(tempString);
+
+    tempString = toString(group -> groups);
+    groupString = realloc(groupString, sizeof(char) * (strlen(groupString) + strlen(tempString) + 1));
+    strcat(groupString, tempString);
+    free(tempString);
+
+    tempString = toString(group -> otherAttributes);
+    groupString = realloc(groupString, sizeof(char) * (strlen(groupString) + strlen(tempString) + 1));
+    strcat(groupString, tempString);
+    free(tempString);
+
+    return groupString;
 }
 
 int compareGroups(const void *first, const void *second){
-    return 0;    
+    return strcmp(groupToString((Group *)first), groupToString((Group *)second));    
 }
 
 void deleteRectangle(void* data){
@@ -269,6 +309,12 @@ char* rectangleToString(void* data){
     strcat(rectString, temp);
     strcat(rectString, "\n");
     free(temp);
+
+    // should only add new line if units is empty
+    temp = rect -> units;
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    strcat(rectString, temp);
+    strcat(rectString, "\n");
     
     // add list of otherAttributes to the string and return it
     temp = toString(rect -> otherAttributes);
@@ -359,10 +405,13 @@ char* pathToString(void* data){
         tempString = toString(path -> otherAttributes);
     }
     
+    // copy otherAttributes then data to pathString and return it
     pathString = malloc(sizeof(char) * (strlen(path -> data) + strlen(tempString) + 2));
     strcpy(pathString, tempString);
     strcat(pathString, "\n");
     strcat(pathString, path -> data);
+
+    free(tempString);
 
     return pathString;
 }
