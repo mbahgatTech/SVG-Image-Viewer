@@ -342,3 +342,92 @@ List *createGroupList(xmlNode *node) {
 
     return groupList;
 }
+
+void addGroupCircles(List *groups, List *circles) {
+    // no groups to look for circles in
+    if (groups == NULL || groups -> length == 0) {
+        return;
+    }
+    
+    ListIterator groupIter = createIterator(groups), circleIter;
+    Group *temp = (Group *)groupIter.current -> data;
+    void *data;
+    
+    // loop through all groups and add their circles to the list
+    while((temp = (Group *)nextElement(&groupIter)) != NULL) {
+        // loop through circles list in current group and add circle to front of list
+        circleIter = createIterator(temp -> circles);
+        while((data = nextElement(&circleIter)) != NULL) {
+            insertBack(circles, data);
+        }
+
+        // recursive call for inner groups
+        addGroupCircles(temp -> groups, circles);
+    }
+}
+
+void addGroupPaths(List *groups, List *paths) {
+    // no groups to look for paths in 
+    if (groups == NULL || groups -> length == 0) {
+        return;
+    }
+    
+    ListIterator groupIter = createIterator(groups), pathIter;
+    Group *temp;
+    void *data;
+    
+    // loop through all groups and add their paths to the list
+    while((temp = (Group *)nextElement(&groupIter)) != NULL) {
+        // loop through paths list in current group and add path to front of paths list
+        pathIter = createIterator(temp -> paths);
+        while((data = nextElement(&pathIter)) != NULL) {
+            insertBack(paths, data);
+        }
+
+        // recursive call for inner groups
+        addGroupPaths(temp -> groups, paths);
+    }
+}
+
+void addGroupRects(List *groups, List *rects) {
+    // no groups to look for Rects in 
+    if (groups == NULL || groups -> length == 0) {
+        return;
+    }
+    
+    ListIterator groupIter = createIterator(groups), rectIter;
+    Group *temp;
+    void *data;
+    
+    // loop through all groups and add their Rects to the list
+    while((temp = (Group *)nextElement(&groupIter)) != NULL) {
+        // loop through rectangle list in current group and add rectangle to front of rects list
+        rectIter = createIterator(temp -> rectangles);
+        while((data = nextElement(&rectIter)) != NULL) {
+            insertBack(rects, data);
+        }
+
+        // recursive call for inner groups
+        addGroupRects(temp -> groups, rects);
+    }
+}
+
+void addInnerGroups(List *groups, List *allGroups) {
+    // no groups to look for groups in 
+    if (groups == NULL || groups -> length == 0) {
+        return;
+    }
+    
+    ListIterator groupIter = createIterator(groups);
+    Group *temp;
+    
+    // iterate through "groups" list and add to allGroups with its inner groups
+    while((temp = (Group *)nextElement(&groupIter)) != NULL) {
+        insertBack(allGroups, temp);
+        
+        // add groups list in curent group to the allGroups
+        addInnerGroups(temp -> groups, allGroups);
+    }
+
+
+}

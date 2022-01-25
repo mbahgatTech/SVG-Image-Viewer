@@ -117,19 +117,100 @@ void deleteSVG(SVG* img) {
 }
 
 List* getRects(const SVG* img) {
-    return NULL;
+    // cant get rectangles of a NULL image
+    if (img == NULL) {
+        return NULL;
+    }
+    
+    // initialize a list, return it if rectangles list is null
+    List *rectList = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+    if (img -> rectangles == NULL || img -> rectangles -> length == 0) {
+        addGroupRects(img -> groups, rectList);
+        return rectList;
+    }
+
+    ListIterator iter = createIterator(img -> rectangles);
+    void *data;
+
+    // whatever what is inserted first in rectangles list 
+    // will be inserted first in our new list
+    while((data = nextElement(&iter)) != NULL) {
+        insertBack(rectList, data);
+    }
+    
+    // add rectangles in groups to rectList
+    addGroupRects(img -> groups, rectList);
+    
+    return rectList;
 }
 
 List* getCircles(const SVG* img) {
-    return NULL;
+    // cant get circles of a NULL image
+    if (img == NULL) {
+        return NULL;
+    }
+    
+    // initialize a list, return it if circles list is null
+    List *circleList = initializeList(&circleToString, &deleteCircle, &compareCircles);
+    if (img -> circles == NULL || img -> circles -> length == 0) {
+        addGroupCircles(img -> groups, circleList);
+        return circleList;
+    }
+
+    ListIterator iter = createIterator(img -> circles);
+    void *data;
+
+    // whatever what is inserted first in circles list 
+    // will be inserted first in our new list
+    while((data = nextElement(&iter)) != NULL) {
+        insertBack(circleList, data);
+    }
+    
+    // add circles in groups to circleList
+    addGroupCircles(img -> groups, circleList);
+    
+    return circleList;
 }
 
 List* getGroups(const SVG* img) {
-    return NULL;
+    // cant get circles of a NULL image
+    if (img == NULL) {
+        return NULL;
+    }
+    
+    // all groups list
+    List *groupList = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    addInnerGroups(img -> groups, groupList);
+
+    return groupList;
 }
 
 List* getPaths(const SVG* img) {
-    return NULL;
+    // cant get paths of a NULL image
+    if (img == NULL) {
+        return NULL;
+    }
+    
+    // initialize a list, return it if paths list is null
+    List *pathList = initializeList(&pathToString, &deletePath, &comparePaths);
+    if (img -> paths == NULL || img -> paths -> length == 0) {
+        addGroupPaths(img -> groups, pathList); // paths in groups added too
+        return pathList;
+    }
+
+    ListIterator iter = createIterator(img -> paths);
+    void *data;
+
+    // whatever what is inserted first in paths list 
+    // will be inserted first in our new list
+    while((data = nextElement(&iter)) != NULL) {
+        insertBack(pathList, data);
+    }
+    
+    // add paths in groups to pathList
+    addGroupPaths(img -> groups, pathList);
+    
+    return pathList;
 }
 
 int numRectsWithArea(const SVG* img, float area) {
