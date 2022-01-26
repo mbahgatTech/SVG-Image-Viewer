@@ -110,6 +110,10 @@ char* SVGToString(const SVG* img) {
 }
 
 void deleteSVG(SVG* img) {
+    if (img == NULL) {
+        return;
+    }
+
     // free lists 
     freeList(img -> rectangles);
     freeList(img -> circles); 
@@ -277,7 +281,7 @@ int numCirclesWithArea(const SVG* img, float area) {
     return numCircles;
 }
 
-int numPathsWithData(const SVG* img, char *data) {
+int numPathsWithdata(const SVG* img, const char* data) {
     if (img == NULL) {
         return 0;
     }
