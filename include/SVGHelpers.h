@@ -1,5 +1,9 @@
 #include <string.h>
 #include <ctype.h>
+
+#include <math.h>
+#define PI 3.141592653589793238
+
 #include "SVGParser.h"
 
 char *findTitle (xmlNode *node);
@@ -27,3 +31,5 @@ void addGroupRects(List *groups, List *rects);
 void addGroupPaths(List *groups, List *paths);
 
 void addInnerGroups(List *groups, List *allGroups);
+
+void freeNodes(List *list);

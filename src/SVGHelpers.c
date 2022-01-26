@@ -431,3 +431,23 @@ void addInnerGroups(List *groups, List *allGroups) {
 
 
 }
+
+// the goal of this function is to free nodes of a list
+// without freeing the data inside the nodes (data could be used in other lists)
+void freeNodes(List *list) {
+    if (list == NULL) {
+        return;
+    }
+    
+    Node *node;
+
+    // loops through all nodes in a list and frees them
+    for (int i = 0; i < list -> length; i++) {
+        node = list -> head;
+        list -> head = list -> head -> next;
+        free(node);
+    }
+
+    // frees list pointer
+    free(list);
+}

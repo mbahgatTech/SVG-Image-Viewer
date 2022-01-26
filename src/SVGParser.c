@@ -57,6 +57,10 @@ SVG* createSVG(const char* fileName) {
 }
 
 char* SVGToString(const SVG* img) {
+    if (img == NULL) {
+        return NULL;
+    }
+
     // enough initial space for namespace, title and desc seperated by new lines  
     char *svgString = malloc(sizeof(char) * (strlen(img -> namespace) + 2));
     
@@ -214,23 +218,169 @@ List* getPaths(const SVG* img) {
 }
 
 int numRectsWithArea(const SVG* img, float area) {
-    return 0;
+    if (img == NULL) {
+        return 0;
+    }
+
+    List *rects = getRects(img); //get all rects in the img
+    
+    void *data;
+    ListIterator iter = createIterator(rects);
+    float currArea = 0;
+    int numRects = 0;
+    
+    // iterate through all rectangles in the list and count one with matching area
+    while((data = nextElement(&iter)) != NULL) {
+        // get area of current rectangle
+        currArea = ((Rectangle *)data) -> width * ((Rectangle *)data) -> height;
+        
+        // increment num of matching rectangles when ceiling of areas match
+        if (ceil(area) == ceil(currArea)) {
+            numRects++;
+        }
+
+        currArea = 0; //reset currarea for next rectangle
+    }
+    
+    // free rects list without freeing pointers to rects
+    freeNodes(rects);
+    return numRects;
 }
 
 int numCirclesWithArea(const SVG* img, float area) {
-    return 0;
+    if (img == NULL) {
+        return 0;
+    }
+    
+    List *circles = getCircles(img); //get all circles in the img
+    
+    void *data;
+    ListIterator iter = createIterator(circles);
+    float currArea = 0;
+    int numCircles = 0;
+    
+    // iterate through all circles in the list and count one with matching area
+    while((data = nextElement(&iter)) != NULL) {
+        // get area of current circle
+        currArea = PI * (((Circle *)data) -> r * ((Circle *)data) -> r);
+        
+        // increment num of matching circles when ceiling of areas match
+        if (ceil(area) == ceil(currArea)) {
+            numCircles++;
+        }
+
+        currArea = 0; //reset currarea for next circle
+    }
+    
+    // free circles list without freeing pointers to circles
+    freeNodes(circles);
+    return numCircles;
 }
 
-int numPathsWithdata(const SVG* img, const char* data) {
-    return 0;
+int numPathsWithData(const SVG* img, char *data) {
+    if (img == NULL) {
+        return 0;
+    }
+    
+    List *paths = getPaths(img); //get all paths in the img
+    
+    void *currPath;
+    ListIterator iter = createIterator(paths);
+    int numPaths = 0;
+    
+    // iterate through all paths in the list and count one with matching area
+    while((currPath = nextElement(&iter)) != NULL) {        
+        // increment num of matching paths when data string matches target data 
+        if (strcmp(((Path *)currPath) -> data, data) == 0) {
+            numPaths++;
+        }
+    }
+    
+    // free paths list without freeing pointers to paths
+    freeNodes(paths);
+    
+    return numPaths;
 }
 
 int numGroupsWithLen(const SVG* img, int len) {
-    return 0;
+    if (img == NULL) {
+        return 0;
+    }
+    
+    List *groups = getGroups(img); //get all groups in the img
+    
+    void *data;
+    ListIterator iter = createIterator(groups);
+    int currLen = 0;
+    int numGroups = 0;
+    
+    // iterate through all groups in the list and count one with matching length
+    while((data = nextElement(&iter)) != NULL) {
+        // get length of current group
+        currLen = ((Group *)data) -> rectangles -> length + 
+        ((Group *)data) -> circles -> length + ((Group *)data) -> paths -> length
+        + ((Group *)data) -> groups -> length;
+        
+        // increment num of matching groups when ceiling of areas match
+        if (currLen == len) {
+            numGroups++;
+        }
+
+        currLen = 0; //reset currarea for next group
+    }
+    
+    // free groups list without freeing pointers to groups
+    freeNodes(groups);
+    
+    return numGroups;
 }
 
 int numAttr(const SVG* img) {
-    return 0;
+    if (img == NULL) {
+        return 0;
+    }
+
+    int numAttrs = 0; // number of attributes in svg struct
+    ListIterator iter;
+    void *data;
+
+    // get all lists and count their attributes
+    List *lists = getRects(img);
+    iter = createIterator(lists);
+
+    while((data = nextElement(&iter)) != NULL) {
+        numAttrs += ((Rectangle *)data) -> otherAttributes -> length;
+    }
+    freeNodes(lists);
+
+    lists = getCircles(img);
+    iter = createIterator(lists);
+    // iterate through circles list of img and add the num of attrs to numAttrs
+    while((data = nextElement(&iter)) != NULL) {
+        numAttrs += ((Circle *)data) -> otherAttributes -> length;
+    }
+    freeNodes(lists);
+
+    lists = getPaths(img);
+    iter = createIterator(lists);
+    // iterate through paths list of img and add the num of attrs to numAttrs
+    while((data = nextElement(&iter)) != NULL) {
+        numAttrs += ((Path *)data) -> otherAttributes -> length;
+    }
+    freeNodes(lists);
+    
+    lists = getGroups(img);
+    iter = createIterator(lists);
+    // iterate through groups list of img and add the num of attrs to numAttrs
+    while((data = nextElement(&iter)) != NULL) {
+        numAttrs += ((Group *)data) -> otherAttributes -> length;
+    }
+    freeNodes(lists);
+
+    // add number of attributes in the SVG struct itself
+    numAttrs += img -> otherAttributes -> length;
+
+    return numAttrs; 
 }
 
 void deleteAttribute( void* data) {
