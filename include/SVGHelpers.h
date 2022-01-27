@@ -1,3 +1,8 @@
+/*
+Authored by: Mazen Bahgat (1157821)
+Last Revision Date: January 26th 2022
+*/
+
 #include <string.h>
 #include <ctype.h>
 
