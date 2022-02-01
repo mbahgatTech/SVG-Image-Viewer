@@ -1,3 +1,8 @@
+/*
+Authored by: Mazen Bahgat (1157821)
+Last Revision Date: January 26th 2022
+*/
+
 #include "SVGHelpers.h"
 
 char *findTitle (xmlNode *node) {
@@ -432,22 +437,8 @@ void addInnerGroups(List *groups, List *allGroups) {
 
 }
 
-// the goal of this function is to free nodes of a list
-// without freeing the data inside the nodes (data could be used in other lists)
-void freeNodes(List *list) {
-    if (list == NULL) {
-        return;
-    }
-    
-    Node *node;
+// delete function that does nothing to its data
+// use: freeing lists that point to elements in other lists
+void dummyDel(void *data) {
 
-    // loops through all nodes in a list and frees them
-    for (int i = 0; i < list -> length; i++) {
-        node = list -> head;
-        list -> head = list -> head -> next;
-        free(node);
-    }
-
-    // frees list pointer
-    free(list);
 }
