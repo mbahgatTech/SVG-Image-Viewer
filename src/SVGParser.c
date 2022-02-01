@@ -68,21 +68,24 @@ char* SVGToString(const SVG* img) {
     }
 
     // enough initial space for namespace, title and desc seperated by new lines  
-    char *svgString = malloc(sizeof(char) * (strlen(img -> namespace) + 2));
+    char *svgString = malloc(sizeof(char) * (strlen("Namespace: ") + strlen(img -> namespace) + 2));
     
     // copy SVG data elements
-    strcpy(svgString, img -> namespace);
+    strcpy(svgString, "Namespace: ");
+    strcat(svgString, img -> namespace);
     strcat(svgString, "\n");
 
     svgString = realloc(svgString, sizeof(char) * (
-        strlen(svgString) + strlen(img -> title) + 2)
+        strlen(svgString) + strlen("Title: ") + strlen(img -> title) + 2)
     );
+    strcat(svgString, "Title: ");
     strcat(svgString, img -> title);
     strcat(svgString, "\n");
 
     svgString = realloc(svgString, sizeof(char) * (
-        strlen(svgString) + strlen(img -> description) + 2)
+        strlen(svgString) + strlen("Description: ") + strlen(img -> description) + 2)
     );
+    strcat(svgString, "Description: ");
     strcat(svgString, img -> description);
     strcat(svgString, "\n");
 
@@ -137,7 +140,7 @@ List* getRects(const SVG* img) {
     }
     
     // initialize a list, return it if rectangles list is null
-    List *rectList = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+    List *rectList = initializeList(&rectangleToString, &dummyDel, &compareRectangles);
     if (img -> rectangles == NULL || img -> rectangles -> length == 0) {
         addGroupRects(img -> groups, rectList);
         return rectList;
@@ -165,7 +168,7 @@ List* getCircles(const SVG* img) {
     }
     
     // initialize a list, return it if circles list is null
-    List *circleList = initializeList(&circleToString, &deleteCircle, &compareCircles);
+    List *circleList = initializeList(&circleToString, &dummyDel, &compareCircles);
     if (img -> circles == NULL || img -> circles -> length == 0) {
         addGroupCircles(img -> groups, circleList);
         return circleList;
@@ -193,7 +196,7 @@ List* getGroups(const SVG* img) {
     }
     
     // all groups list
-    List *groupList = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    List *groupList = initializeList(&groupToString, &dummyDel, &compareGroups);
     addInnerGroups(img -> groups, groupList);
 
     return groupList;
@@ -206,7 +209,7 @@ List* getPaths(const SVG* img) {
     }
     
     // initialize a list, return it if paths list is null
-    List *pathList = initializeList(&pathToString, &deletePath, &comparePaths);
+    List *pathList = initializeList(&pathToString, &dummyDel, &comparePaths);
     if (img -> paths == NULL || img -> paths -> length == 0) {
         addGroupPaths(img -> groups, pathList); // paths in groups added too
         return pathList;
@@ -253,7 +256,7 @@ int numRectsWithArea(const SVG* img, float area) {
     }
     
     // free rects list without freeing pointers to rects
-    freeNodes(rects);
+    freeList(rects);
     return numRects;
 }
 
@@ -283,7 +286,7 @@ int numCirclesWithArea(const SVG* img, float area) {
     }
     
     // free circles list without freeing pointers to circles
-    freeNodes(circles);
+    freeList(circles);
     return numCircles;
 }
 
@@ -307,7 +310,7 @@ int numPathsWithdata(const SVG* img, const char* data) {
     }
     
     // free paths list without freeing pointers to paths
-    freeNodes(paths);
+    freeList(paths);
     
     return numPaths;
 }
@@ -340,7 +343,7 @@ int numGroupsWithLen(const SVG* img, int len) {
     }
     
     // free groups list without freeing pointers to groups
-    freeNodes(groups);
+    freeList(groups);
     
     return numGroups;
 }
@@ -361,7 +364,7 @@ int numAttr(const SVG* img) {
     while((data = nextElement(&iter)) != NULL) {
         numAttrs += ((Rectangle *)data) -> otherAttributes -> length;
     }
-    freeNodes(lists);
+    freeList(lists);
 
     lists = getCircles(img);
     iter = createIterator(lists);
@@ -369,7 +372,7 @@ int numAttr(const SVG* img) {
     while((data = nextElement(&iter)) != NULL) {
         numAttrs += ((Circle *)data) -> otherAttributes -> length;
     }
-    freeNodes(lists);
+    freeList(lists);
 
     lists = getPaths(img);
     iter = createIterator(lists);
@@ -377,7 +380,7 @@ int numAttr(const SVG* img) {
     while((data = nextElement(&iter)) != NULL) {
         numAttrs += ((Path *)data) -> otherAttributes -> length;
     }
-    freeNodes(lists);
+    freeList(lists);
     
     lists = getGroups(img);
     iter = createIterator(lists);
@@ -385,7 +388,7 @@ int numAttr(const SVG* img) {
     while((data = nextElement(&iter)) != NULL) {
         numAttrs += ((Group *)data) -> otherAttributes -> length;
     }
-    freeNodes(lists);
+    freeList(lists);
 
     // add number of attributes in the SVG struct itself
     numAttrs += img -> otherAttributes -> length;
@@ -409,15 +412,16 @@ char* attributeToString(void* data) {
     }
 
     // enough space for name and value followed by new lines
-    char *tempString = malloc(sizeof(char) * (strlen(tempAttr -> name) + 2));
+    char *tempString = malloc(sizeof(char) * (strlen("Attribute: ") + strlen(tempAttr -> name) + 2));
 
     // return null if malloc failed
     if (tempString == NULL) {
         return NULL;
     }
     // concatenate name and value followed by new lines to string and return it
-    strcpy(tempString, tempAttr -> name);
-    strcat(tempString, " ");
+    strcpy(tempString, "Attribute: ");
+    strcat(tempString, tempAttr -> name);
+    strcat(tempString, "=");
 
     // if value is NULl just return the string with the name
     if (tempAttr -> value == NULL || strcmp(tempAttr -> value, "") == 0) {
@@ -426,7 +430,7 @@ char* attributeToString(void* data) {
     
     // otherwise reallocate memory for the tempString to fit in the value
     tempString = realloc(tempString, sizeof(char) * 
-        (strlen(tempAttr -> name)  + strlen(tempAttr -> value) + 2));    
+        (strlen(tempString)  + strlen(tempAttr -> value) + 1));    
 
     strcat(tempString, tempAttr -> value);
 
@@ -434,31 +438,8 @@ char* attributeToString(void* data) {
 }
 
 // returns 0 if equal and 1 otherwise (follows strcmp)
-int compareAttributes(const void *first, const void *second){
-    // 1 of the pointers doesnt point to a valid attribute
-    if (((Attribute *)first) == NULL || ((Attribute *)second) == NULL || 
-        ((Attribute *)first) -> name == NULL || ((Attribute *)second) -> name == NULL) {
-        return 1;
-    }
-    
-    // since value can be NULL, we check only for name equality
-    if (((Attribute *)first) -> value == NULL || ((Attribute *)second) -> value == NULL) {
-        // branch means that 1 of the values is NULL and the other isnt (not equal)
-        if (((Attribute *)first) -> value != NULL || ((Attribute *)second) -> value != NULL) {
-            return 1;
-        }
-
-        return strcmp(((Attribute *)first) -> name, ((Attribute *)second) -> name);
-    }
-    
-    if (strcmp(((Attribute *)first) -> name, ((Attribute *)second) -> name) == 0 && 
-        strcmp(((Attribute *)first) -> value, ((Attribute *)second) -> value) == 0) {
-        // both equal
-        return 0;
-    } 
-    
-    // not equal
-    return 1;
+int compareAttributes(const void *first, const void *second) {
+    return strcmp(attributeToString((Attribute *) first), attributeToString((Attribute *) second));
 }  
 
 
@@ -482,9 +463,10 @@ char* groupToString(void* data) {
 
     // copy list strings into groupString 
     char *tempString = toString(group -> rectangles);
-    char *groupString = malloc(sizeof(char) * (strlen(tempString) + 1));
-
-    strcpy(groupString, tempString);
+    char *groupString = malloc(sizeof(char) * (strlen("Element type: Group\n") + strlen(tempString) + 1));
+    
+    strcpy(groupString, "Element type: Group\n");
+    strcat(groupString, tempString);
     free(tempString);
     
     tempString = toString(group -> circles);
@@ -506,6 +488,9 @@ char* groupToString(void* data) {
     groupString = realloc(groupString, sizeof(char) * (strlen(groupString) + strlen(tempString) + 1));
     strcat(groupString, tempString);
     free(tempString);
+    
+    groupString = realloc(groupString, sizeof(char) * (strlen(groupString) + strlen("\nEnd of group elements.\n") + 1));
+    strcat(groupString, "\nEnd of group elements.\n");
 
     return groupString;
 }
@@ -514,7 +499,7 @@ int compareGroups(const void *first, const void *second){
     return strcmp(groupToString((Group *)first), groupToString((Group *)second));    
 }
 
-void deleteRectangle(void* data){
+void deleteRectangle(void* data) {
     freeList(((Rectangle *)data) -> otherAttributes);
     free(data);
 }
@@ -528,32 +513,38 @@ char* rectangleToString(void* data){
     
     // call floatToString on x,y, width and height and concatenate them to rectString
     char *temp = floatToString(rect -> x);
-    char *rectString = malloc(sizeof(char) * strlen(temp) + 2);
-    strcpy(rectString, temp);
+    char *rectString = malloc(sizeof(char) * (strlen("Element type: Rectangle\nx: ") + strlen(temp) + 2));
+    
+    strcpy(rectString, "Element type: Rectangle\nx: ");
+    strcat(rectString, temp);
     strcat(rectString, "\n");
     free(temp);
     
     temp = floatToString(rect -> y);
-    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen("y: ") + strlen(temp) + 2));
+    strcat(rectString, "y: ");
     strcat(rectString, temp);
     strcat(rectString, "\n");
     free(temp);
     
     temp = floatToString(rect -> width);
-    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen("width: ") + strlen(temp) + 2));
+    strcat(rectString, "width: ");
     strcat(rectString, temp);
     strcat(rectString, "\n");
     free(temp);
 
     temp = floatToString(rect -> height);
-    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen("height: ") + strlen(temp) + 2));
+    strcat(rectString, "height: ");
     strcat(rectString, temp);
     strcat(rectString, "\n");
     free(temp);
 
     // should only add new line if units is empty
     temp = rect -> units;
-    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen(temp) + 2));
+    rectString = realloc(rectString, sizeof(char) * (strlen(rectString) + strlen("units: ") + strlen(temp) + 2));
+    strcat(rectString, "units: ");
     strcat(rectString, temp);
     strcat(rectString, "\n");
     
@@ -584,27 +575,32 @@ char* circleToString(void* data){
     //easier access to data's elements without having to cast to Circle * every time
     Circle *temp = (Circle *)data;
     char *tempString = floatToString(temp -> cx);
-    char *circleString = malloc(sizeof(char) * (strlen(tempString) + 2));
+    char *circleString = malloc(sizeof(char) * (strlen("Element type: Circle\ncx: ") + strlen(tempString) + 2));
 
     // concatenate circle elements to the string
-    strcpy(circleString, tempString);
+    strcpy(circleString, "Element type: Circle\ncx: ");
+    strcat(circleString, tempString);
     strcat(circleString, "\n");
     free(tempString); 
     
+
     tempString = floatToString(temp -> cy);
     // reallocate memory for circleString and tempString plus new line after.
-    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 2));
+    circleString = realloc(circleString, sizeof(char) * (strlen("cy: ") + strlen(circleString) + strlen(tempString) + 2));
+    strcat(circleString, "cy: ");
     strcat(circleString, tempString);
     strcat(circleString, "\n");
     free(tempString);
 
     tempString = floatToString(temp -> r);
-    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(tempString) + 2));
+    circleString = realloc(circleString, sizeof(char) * (strlen("r: ") + strlen(circleString) + strlen(tempString) + 2));
+    strcat(circleString, "r: ");
     strcat(circleString, tempString);
     strcat(circleString, "\n");
     free(tempString); // free memory from floatToString call
     
-    circleString = realloc(circleString, sizeof(char) * (strlen(circleString) + strlen(temp -> units) + 2));
+    circleString = realloc(circleString, sizeof(char) * (strlen("units: ") + strlen(circleString) + strlen(temp -> units) + 2));
+    strcat(circleString, "units: ");
     strcat(circleString, temp -> units);
     strcat(circleString, "\n");
 
@@ -647,9 +643,13 @@ char* pathToString(void* data){
     }
     
     // copy otherAttributes then data to pathString and return it
-    pathString = malloc(sizeof(char) * (strlen(path -> data) + strlen(tempString) + 2));
-    strcpy(pathString, tempString);
+    pathString = malloc(sizeof(char) * (strlen("Element type: Path\nData: ")
+    + strlen(path -> data) + strlen(tempString) + 2)
+     );
+    strcpy(pathString, "Element type: Path\n");
+    strcat(pathString, tempString);
     strcat(pathString, "\n");
+    strcat(pathString, "Data: ");
     strcat(pathString, path -> data);
 
     free(tempString);

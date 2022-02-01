@@ -456,3 +456,9 @@ void freeNodes(List *list) {
     // frees list pointer
     free(list);
 }
+
+// delete function that does nothing to its data
+// use: freeing lists that point to elements in other lists
+void dummyDel(void *data) {
+
+}
