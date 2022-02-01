@@ -37,6 +37,4 @@ void addGroupPaths(List *groups, List *paths);
 
 void addInnerGroups(List *groups, List *allGroups);
 
-void freeNodes(List *list);
-
 void dummyDel(void *data);
