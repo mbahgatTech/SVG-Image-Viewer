@@ -21,7 +21,13 @@ SVG* createSVG(const char* fileName) {
     
     xmlNode *svgNode = xmlDocGetRootElement(svgImg);
     SVG *tempSVG = malloc(sizeof(SVG));
-    if (svgNode == NULL || tempSVG == NULL) {
+    if (svgNode == NULL) {
+        return NULL;
+    }
+    
+    if (tempSVG == NULL || svgNode == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
         return NULL;
     }
     
@@ -395,6 +401,67 @@ int numAttr(const SVG* img) {
 
     return numAttrs; 
 }
+
+SVG* createValidSVG(const char* fileName, const char* schemaFile) {
+    return NULL;
+}
+
+bool writeSVG(const SVG* img, const char* fileName) {
+    return false;
+}
+
+bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newAttribute) {
+    return false;
+}
+
+void addComponent(SVG* img, elementType type, void* newElement) {
+
+}
+
+char* attrToJSON(const Attribute *a) {
+    return NULL;
+}
+
+char* circleToJSON(const Circle *c) {
+    return NULL;
+}
+
+char* rectToJSON(const Rectangle *r) {
+    return NULL;
+}
+
+char* pathToJSON(const Path *p) {
+    return NULL;
+}
+
+char* groupToJSON(const Group *g) {
+    return NULL;
+}
+
+char* attrListToJSON(const List *list) {
+    return NULL;
+}
+
+char* circListToJSON(const List *list) {
+    return NULL;
+}
+
+char* rectListToJSON(const List *list) {
+    return NULL;
+}
+
+char* pathListToJSON(const List *list) {
+    return NULL;
+}
+
+char* groupListToJSON(const List *list) {
+    return NULL;
+}
+
+char* SVGtoJSON(const SVG* img) {
+    return NULL;
+}
+
 
 void deleteAttribute( void* data) {
     free(((Attribute *) data) -> name);
