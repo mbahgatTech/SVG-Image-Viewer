@@ -96,30 +96,41 @@ char* SVGToString(const SVG* img) {
     strcat(svgString, "\n");
 
     // copy SVG lists
-    char *temp = toString(img -> rectangles);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    char *temp;
+    if(img -> rectangles) {
+        temp = toString(img -> rectangles);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
 
-    temp = toString(img -> circles);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    if(img -> circles) {
+        temp = toString(img -> circles);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
 
-    temp = toString(img -> paths);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    if(img -> paths) {
+        temp = toString(img -> paths);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
 
-    temp = toString(img -> groups);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
-    
-    temp = toString(img -> otherAttributes);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    if (img -> groups) {
+        temp = toString(img -> groups);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
+
+    if (img -> otherAttributes) {
+        temp = toString(img -> otherAttributes);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
     
     return svgString;
 }
@@ -403,7 +414,69 @@ int numAttr(const SVG* img) {
 }
 
 SVG* createValidSVG(const char* fileName, const char* schemaFile) {
-    return NULL;
+     LIBXML_TEST_VERSION
+
+    if (fileName == NULL || schemaFile == NULL) {
+        return NULL;
+    }
+
+    xmlDoc *svgImg = xmlReadFile(fileName, NULL, 0);
+    if (svgImg == NULL) {
+        return NULL;
+    }
+
+    // validate xmlDoc against schemaFile
+    if (!validSVG(svgImg, schemaFile)) {
+        return NULL;
+    }
+    
+    xmlNode *svgNode = xmlDocGetRootElement(svgImg);
+    SVG *tempSVG = malloc(sizeof(SVG));
+    if (svgNode == NULL) {
+        return NULL;
+    }
+    
+    if (tempSVG == NULL || svgNode == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
+        return NULL;
+    }
+    
+    // initialize string with empty values
+    strcpy(tempSVG -> namespace, "");
+    strcpy(tempSVG -> title, "");
+    strcpy(tempSVG -> description, "");
+
+    // copy only the first 255 chars or length of the first namespace to fit into
+    // our SVG namespace element. Note: only 1 namesapce is assumed in this program
+    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, 255);
+
+
+    char *tempPtr = findTitle(svgNode);
+    // copy first 255 or length chars of title
+    if (tempPtr != NULL) {
+        strncpy(tempSVG -> title, tempPtr, 255);
+    }
+    
+    tempPtr = findDesc(svgNode);
+    // copy first 255 or length chars of desc
+    if (tempPtr != NULL) {
+        strncpy(tempSVG -> description, tempPtr, 255);
+    }
+
+    // initialize lists with NULL for now
+    tempSVG -> rectangles = createRectangleList(svgNode);
+    tempSVG -> circles = createCircleList(svgNode);
+    tempSVG -> paths = createPathList(svgNode);
+    tempSVG -> groups = createGroupList(svgNode);
+    tempSVG -> otherAttributes = createAttributeList(svgNode, NULL, 0);
+
+    // free svgImg object
+    xmlFreeDoc(svgImg);
+    
+    // free any global variables that may have been used by the parser
+    xmlCleanupParser();
+    return tempSVG;
 }
 
 bool writeSVG(const SVG* img, const char* fileName) {

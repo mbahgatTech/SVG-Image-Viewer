@@ -142,7 +142,7 @@ List *createAttributeList(xmlNode *node, char **coreAttributes, int length) {
 }
 
 List *createRectangleList(xmlNode *img) {
-    if (img == NULL || img -> properties == NULL) {
+    if (img == NULL) {
         return NULL;
     }
     List *rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
@@ -204,7 +204,7 @@ List *createRectangleList(xmlNode *img) {
 }
 
 List *createCircleList(xmlNode *img) {
-    if (img == NULL || img -> properties == NULL) {
+    if (img == NULL) {
         return NULL;
     }
     
@@ -263,7 +263,7 @@ List *createCircleList(xmlNode *img) {
 }
 
 List *createPathList(xmlNode *img) {
-    if (img == NULL || img -> properties == NULL) {
+    if (img == NULL) {
         return NULL;
     }
     
@@ -441,4 +441,46 @@ void addInnerGroups(List *groups, List *allGroups) {
 // use: freeing lists that point to elements in other lists
 void dummyDel(void *data) {
 
+}
+
+bool validSVG(xmlDoc *img, const char *xsdFile) {
+    if (img == NULL || xsdFile == NULL) {
+        return false;
+    }
+
+    // create new parser context from xsd file name
+    xmlSchemaParserCtxtPtr myCtxt =  xmlSchemaNewParserCtxt(xsdFile);
+    if (myCtxt == NULL) {
+        return false;
+    }
+    
+    xmlSchemaPtr mySchema = xmlSchemaParse(myCtxt);
+    xmlSchemaFreeParserCtxt(myCtxt);
+
+    if (mySchema == NULL) {
+        return false;
+    }
+    
+    // validate img tree to myCtxt
+    xmlSchemaValidCtxtPtr validCtxt = xmlSchemaNewValidCtxt(mySchema);
+    if (validCtxt == NULL) {
+        xmlSchemaFree(mySchema);
+        xmlSchemaCleanupTypes();
+
+        return false;
+    }
+
+    int result = xmlSchemaValidateDoc(validCtxt, img);
+
+    // free memory used by libxml2
+    xmlSchemaFreeValidCtxt(validCtxt);
+    xmlSchemaFree(mySchema);
+    xmlSchemaCleanupTypes();
+
+    // 0 means its a valid svg image tree
+    if (result != 0) {
+        return false;
+    }
+
+    return true;
 }
