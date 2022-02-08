@@ -480,7 +480,16 @@ SVG* createValidSVG(const char* fileName, const char* schemaFile) {
 }
 
 bool writeSVG(const SVG* img, const char* fileName) {
-    return false;
+    if (img == NULL || fileName == NULL) {
+        return false;
+    }
+    
+    
+    xmlDoc *imgDoc = SVGToDoc(img);
+    // open file for writing xml 
+    xmlSaveFile(fileName, imgDoc);
+    
+    return true;
 }
 
 bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newAttribute) {

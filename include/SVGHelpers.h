@@ -5,7 +5,6 @@ Last Revision Date: January 26th 2022
 
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
 
 #include <math.h>
 #define PI 3.141592653589793238
@@ -41,3 +40,15 @@ void addInnerGroups(List *groups, List *allGroups);
 void dummyDel(void *data);
 
 bool validSVG(xmlDoc *img, const char *xsdFile);
+
+xmlDoc *SVGToDoc(const SVG *img);
+
+bool createRectNodes(xmlNode *svgNode, const SVG *img);
+
+bool createCircleNodes(xmlNode *svgNode, const SVG *img);
+
+bool createPathNodes(xmlNode *svgNode, const SVG *img);
+
+bool createGroupNodes(xmlNode *svgNode, const SVG *img);
+
+void createProps(xmlNode *node, List *attributes);

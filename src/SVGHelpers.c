@@ -484,3 +484,301 @@ bool validSVG(xmlDoc *img, const char *xsdFile) {
 
     return true;
 }
+
+xmlDoc *SVGToDoc(const SVG *img) {
+    if (img == NULL) {
+        return NULL;
+    }
+    
+    // create new doc and an svg fragment
+    xmlDoc *doc = xmlNewDoc((const xmlChar *)"1.0");
+    if (doc == NULL) {
+        return NULL;
+    }
+
+    xmlNode *svgFragment = xmlNewDocFragment(doc);
+    if (svgFragment == NULL) {
+        return NULL;
+    }
+
+    xmlNode *svgNode = xmlNewChild(svgFragment, NULL, (const xmlChar *)"svg", NULL);
+    if (svgNode == NULL) {
+        return NULL;
+    }
+    
+    // create nameSpace and assign it to svgNode
+    xmlNs *nameSpace = xmlNewNs(svgNode, (const xmlChar *)img -> namespace, NULL);
+    xmlSetNs(svgNode, nameSpace);
+    
+    // create title and desc elements if existent
+    if (strlen(img -> title) > 0) {
+        xmlNode *title = xmlNewChild(svgNode, NULL, (const xmlChar *)"title", NULL);
+        if(title == NULL) {
+            return NULL;
+        }
+
+        // create text child with img -> title 
+        if (xmlNewTextChild(title, NULL, NULL, (const xmlChar *)img -> title) == NULL) {
+            return NULL;
+        }
+    }
+
+    if (strlen(img -> description) > 0) {
+        xmlNode *desc = xmlNewChild(svgNode, NULL, (const xmlChar *)"desc", NULL);
+        if(desc == NULL) {
+            return NULL;
+        }
+
+        // create text child with img -> title 
+        if (xmlNewTextChild(desc, NULL, NULL, (const xmlChar *)img -> description) == NULL) {
+            return NULL;
+        }
+    }
+
+    // get lists and write their elements to xmlNode children of svgNode
+    if (!createRectNodes(svgNode, img)) {
+        return NULL;
+    }
+    
+    if (!createCircleNodes(svgNode, img)) {
+        return NULL;
+    }
+
+    if (!createPathNodes(svgNode, img)) {
+        return NULL;
+    }
+    
+    createProps(svgNode, img -> otherAttributes);
+    xmlDocSetRootElement(doc, svgNode);
+    
+    return doc;
+}
+
+bool createRectNodes(xmlNode *svgNode, const SVG *img) {
+    if (svgNode == NULL || img  == NULL) {
+        return false;
+    }
+ 
+    void *data;
+    ListIterator iter = createIterator(img -> rectangles);
+
+    while((data = nextElement(&iter)) != NULL) {
+        Rectangle *currRect = (Rectangle *)data;
+
+        // make a new child rect child node 
+        xmlNode *rectNode = xmlNewChild(svgNode, NULL, (const xmlChar *)"rect", NULL);
+        if(rectNode == NULL) {
+            return false;
+        }
+        
+        xmlAttr *attrs = NULL;
+        char *floatString = NULL;
+        
+        // add x attribute to the rectangle
+        if ((floatString = floatToString(currRect -> x)) == NULL) {
+            return false;
+        }
+        else if (strlen(currRect -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currRect -> units) + 1));
+            strcat(floatString, currRect -> units);
+        }
+        attrs = xmlNewProp(rectNode, (const xmlChar *)"x", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+        
+        // add y attribute
+        if ((floatString = floatToString(currRect -> y)) == NULL) {
+            return false;
+        }
+        else if (strlen(currRect -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currRect -> units) + 1));
+            strcat(floatString, currRect -> units);
+        }
+        attrs = xmlNewProp(rectNode, (const xmlChar *)"y", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+        
+        // add width attribute
+        if ((floatString = floatToString(currRect -> width)) == NULL) {
+            return false;
+        }
+        else if (strlen(currRect -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currRect -> units) + 1));
+            strcat(floatString, currRect -> units);
+        }
+        attrs = xmlNewProp(rectNode, (const xmlChar *)"width", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+        
+        if ((floatString = floatToString(currRect -> height)) == NULL) {
+            return false;
+        }
+        else if (strlen(currRect -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currRect -> units) + 1));
+            strcat(floatString, currRect -> units);
+        }
+        attrs = xmlNewProp(rectNode, (const xmlChar *)"height", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+
+        createProps(rectNode, currRect -> otherAttributes);
+    }
+
+    return true;
+}
+
+bool createCircleNodes(xmlNode *svgNode, const SVG *img) {
+    if (svgNode == NULL || img  == NULL) {
+        return false;
+    }
+
+    void *data;
+    ListIterator iter = createIterator(img -> circles);
+
+    while((data = nextElement(&iter)) != NULL) {
+        Circle *currCircle = (Circle *)data;
+
+        // make a new Circle child node 
+        xmlNode *circleNode = xmlNewChild(svgNode, NULL, (const xmlChar *)"circle", NULL);
+        if(circleNode == NULL) {
+            return false;
+        }
+        
+        xmlAttr *attrs = NULL;
+        char *floatString = NULL;
+        
+        // add cx attribute to the Circle
+        if ((floatString = floatToString(currCircle -> cx)) == NULL) {
+            return false;
+        }
+        else if (strlen(currCircle -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currCircle -> units) + 1));
+            strcat(floatString, currCircle -> units);
+        }
+        attrs = xmlNewProp(circleNode, (const xmlChar *)"cx", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+        
+        // add cy attribute
+        if ((floatString = floatToString(currCircle -> cy)) == NULL) {
+            return false;
+        }
+        else if (strlen(currCircle -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currCircle -> units) + 1));
+            strcat(floatString, currCircle -> units);
+        }
+        attrs = xmlNewProp(circleNode, (const xmlChar *)"cy", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+        
+        // add r attribute
+        if ((floatString = floatToString(currCircle -> r)) == NULL) {
+            return false;
+        }
+        else if (strlen(currCircle -> units) > 0) {
+            // add units to the string if it exists in the struct
+            floatString = realloc(floatString, sizeof(char) * (strlen(floatString) + 
+                        strlen(currCircle -> units) + 1));
+            strcat(floatString, currCircle -> units);
+        }
+        attrs = xmlNewProp(circleNode, (const xmlChar *)"r", (const xmlChar *)floatString);
+        free(floatString);
+
+        if (attrs == NULL) {
+            return false;
+        }
+
+        createProps(circleNode, currCircle -> otherAttributes);
+    }
+
+    return true;
+}
+
+bool createPathNodes(xmlNode *svgNode, const SVG *img) {
+    if (svgNode == NULL || img  == NULL) {
+        return false;
+    }
+
+    void *data;
+    ListIterator iter = createIterator(img -> paths);
+    // loop through all paths and add their nodes to children of svgNode
+    while((data = nextElement(&iter)) != NULL) {
+        Path *currPath = (Path *)data;
+
+        // make a new Path child node 
+        xmlNode *pathNode = xmlNewChild(svgNode, NULL, (const xmlChar *)"path", NULL);
+        if(pathNode == NULL) {
+            return false;
+        }
+        
+        // add d attribute to the Path
+        xmlAttr *attrs = NULL;
+        char *string = malloc(sizeof(char) * strlen(currPath -> data) + 1);
+
+        if (string == NULL) {
+            return false;
+        }
+
+        strcpy(string, currPath -> data);
+        attrs = xmlNewProp(pathNode, (const xmlChar *)"d", (const xmlChar *)string);
+        free(string);
+
+        if (attrs == NULL) {
+            return false;
+        }
+
+        createProps(pathNode, currPath -> otherAttributes);
+    }
+
+    return true;
+}
+
+void createProps(xmlNode *node, List *attributes) {
+    if (node == NULL || attributes == NULL) {
+        return;
+    }
+    
+    ListIterator iter = createIterator(attributes);
+    void *data;
+    
+    // loop through all attributes and add them as properties to node
+    while ((data = nextElement(&iter)) != NULL) {
+        // add currAttr to properties of node
+        Attribute *currAttr = (Attribute *)data;
+        xmlAttr *attr = xmlNewProp(node, (const xmlChar *)currAttr -> name, (const xmlChar *)currAttr -> value);   
+
+        if (attr == NULL) {
+            return;
+        }
+    }
+}
