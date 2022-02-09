@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: January 26th 2022
+Last Revision Date: February 9th 2022
 */
 
 #include "SVGHelpers.h"
@@ -841,4 +841,35 @@ void createProps(xmlNode *node, List *attributes) {
             return;
         }
     }
+}
+
+bool editAttributes(List *otherAttributes, Attribute *newAttribute) {
+    if (otherAttributes == NULL || newAttribute == NULL) {
+        return false;
+    }
+
+    void *data;
+    ListIterator iter = createIterator(otherAttributes);
+    Node *temp = iter.current;
+    // check otherAttribute list if newAttribute already exists
+    while ((data = nextElement(&iter)) != NULL) {
+        Attribute *ptr = (Attribute *)data;
+        // case insensitive comparison
+        if (strcmp(ptr -> name, newAttribute -> name) == 0) {
+            // reallocate memory for the new value of the attribute
+            ptr = realloc(ptr, sizeof(Attribute) + sizeof(char) * (strlen(newAttribute -> value) + 1));
+            strcpy(ptr -> value, newAttribute -> value);
+            temp -> data = ptr;
+
+            free(newAttribute -> name);
+            free(newAttribute);
+            return true;
+        }
+        temp = temp -> next;
+    }
+
+    // insert the attribute at the end of the otherAtribute list
+    insertBack(otherAttributes, newAttribute);
+
+    return true;
 }

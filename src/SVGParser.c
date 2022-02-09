@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: January 26th 2022
+Last Revision Date: February 9th 2022
 */
 
 
@@ -637,7 +637,198 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
 }
 
 bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newAttribute) {
-    return false;
+    if (img == NULL || newAttribute == NULL || newAttribute -> name == NULL || 
+    newAttribute -> value == NULL) {
+        return false;
+    }
+    
+    // set attribute for SVG struct
+    if (elemType == SVG_IMG) {
+        if (img -> otherAttributes == NULL) {
+            return false;
+        }
+        
+        // newAttribute will be either appended or edited into otherAttributes
+        if (!editAttributes(img -> otherAttributes, newAttribute)) {
+            return false;
+        }
+    }// check the type of element and insert the attribute for element in elemIndex
+    else if (elemType == RECT) {
+        if (img -> rectangles == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> rectangles);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> rectangles);
+        int i = 0;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                break;
+            }
+
+            i++;
+        }
+        // data is rectangle at elemIndex
+        Rectangle *rect = (Rectangle *)data;
+        char units[50];
+        // check if newAttribute is one of the core attributes
+        if(strcmp(newAttribute -> name, "x") == 0) {
+            rect -> x = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "y") == 0) {
+            rect -> y = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "width") == 0) {
+            rect -> width = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "height") == 0) {
+            rect -> height = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else {
+            // newAttribute will be either appended or edited into otherAttributes
+            if (!editAttributes(rect -> otherAttributes, newAttribute)) {
+                return false;
+            }
+        }
+    }
+    else if(elemType == CIRC) {
+        if (img -> circles == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> circles);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> circles);
+        int i = 0;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                break;
+            }
+
+            i++;
+        }
+        // data is circle at elemIndex
+        Circle *circle = (Circle *)data;
+        char units[50];
+        // check if newAttribute is one of the core attributes
+        if(strcmp(newAttribute -> name, "cx") == 0) {
+            circle -> cx = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "y") == 0) {
+            circle -> cy = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "r") == 0) {
+            circle -> r = getUnits(units, newAttribute -> value);
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else {
+            // newAttribute will be either appended or edited into otherAttributes
+            if (!editAttributes(circle -> otherAttributes, newAttribute)) {
+                return false;
+            }
+        }
+    } 
+    else if(elemType == PATH) {
+        if (img -> paths == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> paths);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> paths);
+        int i = 0;
+        Node *temp = iter.current;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                
+                break;
+            }
+            temp = temp -> next;
+
+            i++;
+        }
+
+        // data is path at elemIndex
+        Path *path = (Path *)data;
+        // check if newAttribute is one of the core attributes
+        if(strcmp(newAttribute -> name, "d") == 0) {
+            // reallocate Path for enough space for newAttribute value
+            path = realloc(path, sizeof(Path) + sizeof(char) * (strlen(newAttribute -> value) + 5));
+            strcpy(path -> data, newAttribute -> value);
+            temp -> data = path;
+            
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else {
+            // newAttribute will be either appended or edited into otherAttributes
+            if (!editAttributes(path -> otherAttributes, newAttribute)) {
+                return false;
+            }
+        }
+    }
+    else if(elemType == GROUP) {
+        if (img -> groups == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> groups);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> groups);
+        int i = 0;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                break;
+            }
+
+            i++;
+        }
+        // data is group at elemIndex
+        Group *group = (Group *)data;
+        // newAttribute will be either appended or edited into otherAttributes
+        if (!editAttributes(group -> otherAttributes, newAttribute)) {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+    
+    return true;
 }
 
 void addComponent(SVG* img, elementType type, void* newElement) {
@@ -736,7 +927,7 @@ int compareAttributes(const void *first, const void *second) {
 }  
 
 
-void deleteGroup(void* data){
+void deleteGroup(void* data) {
     // free lists inside the group struct
     freeList(((Group *)data) -> rectangles);
     freeList(((Group *)data) -> circles);

@@ -52,3 +52,5 @@ bool createPathNodes(xmlNode *svgNode, List *paths);
 bool createGroupNodes(xmlNode *svgNode, List *groups);
 
 void createProps(xmlNode *node, List *attributes);
+
+bool editAttributes(List *otherAttributes, Attribute *newAttribute);
