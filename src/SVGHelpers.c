@@ -498,11 +498,17 @@ xmlDoc *SVGToDoc(const SVG *img) {
 
     xmlNode *svgFragment = xmlNewDocFragment(doc);
     if (svgFragment == NULL) {
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return NULL;
     }
 
     xmlNode *svgNode = xmlNewChild(svgFragment, NULL, (const xmlChar *)"svg", NULL);
+    xmlDocSetRootElement(doc, svgNode); // svg element is root element of doc
     if (svgNode == NULL) {
+        free(svgFragment);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return NULL;
     }
     
@@ -512,55 +518,67 @@ xmlDoc *SVGToDoc(const SVG *img) {
     
     // create title and desc elements if existent
     if (strlen(img -> title) > 0) {
-        xmlNode *title = xmlNewChild(svgNode, NULL, (const xmlChar *)"title", NULL);
-        if(title == NULL) {
-            return NULL;
-        }
-
-        // create text child with img -> title 
-        if (xmlNewTextChild(title, NULL, NULL, (const xmlChar *)img -> title) == NULL) {
+        // create text child to svgNode with img -> title 
+        if (xmlNewTextChild(svgNode, NULL, (const xmlChar *)"title", (const xmlChar *)img -> title) == NULL) {
+            free(svgFragment);
+            xmlFreeDoc(doc);
+            xmlCleanupParser();
             return NULL;
         }
     }
 
     if (strlen(img -> description) > 0) {
-        xmlNode *desc = xmlNewChild(svgNode, NULL, (const xmlChar *)"desc", NULL);
-        if(desc == NULL) {
-            return NULL;
-        }
-
-        // create text child with img -> title 
-        if (xmlNewTextChild(desc, NULL, NULL, (const xmlChar *)img -> description) == NULL) {
+        // create text child to svgNode with img -> description 
+        if (xmlNewTextChild(svgNode, NULL, (const xmlChar *)"desc", (const xmlChar *)img -> description) == NULL) {
+            free(svgFragment);
+            xmlFreeDoc(doc);
+            xmlCleanupParser();
             return NULL;
         }
     }
 
     // get lists and write their elements to xmlNode children of svgNode
-    if (!createRectNodes(svgNode, img)) {
+    if (!createRectNodes(svgNode, img -> rectangles)) {
+        free(svgFragment);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return NULL;
     }
     
-    if (!createCircleNodes(svgNode, img)) {
+    if (!createCircleNodes(svgNode, img -> circles)) {
+        free(svgFragment);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return NULL;
     }
 
-    if (!createPathNodes(svgNode, img)) {
+    if (!createPathNodes(svgNode, img -> paths)) {
+        free(svgFragment);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return NULL;
+    }
+
+    if (!createGroupNodes(svgNode, img -> groups)) {
+        free(svgFragment);
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
         return NULL;
     }
     
     createProps(svgNode, img -> otherAttributes);
-    xmlDocSetRootElement(doc, svgNode);
-    
+    free(svgFragment);
+
     return doc;
 }
 
-bool createRectNodes(xmlNode *svgNode, const SVG *img) {
-    if (svgNode == NULL || img  == NULL) {
+bool createRectNodes(xmlNode *svgNode, List *rectangles) {
+    if (svgNode == NULL || rectangles  == NULL) {
         return false;
     }
  
     void *data;
-    ListIterator iter = createIterator(img -> rectangles);
+    ListIterator iter = createIterator(rectangles);
 
     while((data = nextElement(&iter)) != NULL) {
         Rectangle *currRect = (Rectangle *)data;
@@ -647,13 +665,13 @@ bool createRectNodes(xmlNode *svgNode, const SVG *img) {
     return true;
 }
 
-bool createCircleNodes(xmlNode *svgNode, const SVG *img) {
-    if (svgNode == NULL || img  == NULL) {
+bool createCircleNodes(xmlNode *svgNode, List *circles) {
+    if (svgNode == NULL || circles  == NULL) {
         return false;
     }
 
     void *data;
-    ListIterator iter = createIterator(img -> circles);
+    ListIterator iter = createIterator(circles);
 
     while((data = nextElement(&iter)) != NULL) {
         Circle *currCircle = (Circle *)data;
@@ -724,13 +742,13 @@ bool createCircleNodes(xmlNode *svgNode, const SVG *img) {
     return true;
 }
 
-bool createPathNodes(xmlNode *svgNode, const SVG *img) {
-    if (svgNode == NULL || img  == NULL) {
+bool createPathNodes(xmlNode *svgNode, List *paths) {
+    if (svgNode == NULL || paths  == NULL) {
         return false;
     }
 
     void *data;
-    ListIterator iter = createIterator(img -> paths);
+    ListIterator iter = createIterator(paths);
     // loop through all paths and add their nodes to children of svgNode
     while((data = nextElement(&iter)) != NULL) {
         Path *currPath = (Path *)data;
@@ -760,6 +778,48 @@ bool createPathNodes(xmlNode *svgNode, const SVG *img) {
         createProps(pathNode, currPath -> otherAttributes);
     }
 
+    return true;
+}
+
+bool createGroupNodes(xmlNode *svgNode, List *groups) {
+    if (svgNode == NULL || groups == NULL) {
+        return false;
+    }
+
+    void *data;
+    ListIterator iter = createIterator(groups);
+
+    // loop through all groups and add their nodes to children of svgNode
+    while((data = nextElement(&iter)) != NULL) {
+        Group *currGroup = (Group *)data;
+        
+        xmlNode *groupNode = xmlNewChild(svgNode, NULL, (const xmlChar *)"g", NULL);
+        if (groupNode == NULL) {
+            return false;
+        }
+
+        // get attributes of the group added to the node
+        createProps(groupNode, currGroup -> otherAttributes);
+        
+        // add shape nodes added as elements to the group
+        if (!createRectNodes(groupNode, currGroup -> rectangles)) {
+            return false;
+        }
+
+        if (!createCircleNodes(groupNode, currGroup -> circles)) {
+            return false;
+        }
+        
+        if(!createPathNodes(groupNode, currGroup -> paths)) {
+            return false;
+        }
+
+
+        if (!createGroupNodes(groupNode, currGroup -> groups)) {
+            return false;
+        }
+    }
+    
     return true;
 }
 

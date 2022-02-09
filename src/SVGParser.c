@@ -484,11 +484,155 @@ bool writeSVG(const SVG* img, const char* fileName) {
         return false;
     }
     
-    
+    // create an xmlDoc from the SVG img
     xmlDoc *imgDoc = SVGToDoc(img);
-    // open file for writing xml 
-    xmlSaveFile(fileName, imgDoc);
+    if(imgDoc == NULL) {
+        return false;
+    }
+
+    // write the doc tree to the file 
+    if (xmlSaveFile(fileName, imgDoc) == -1) {
+        // -1 return means fail
+        xmlFreeDoc(imgDoc);
+        xmlCleanupParser();
+        return false;
+    }
+
+    xmlFreeDoc(imgDoc);
+    xmlCleanupParser();
     
+    return true;
+}
+
+bool validateSVG(const SVG* img, const char* schemaFile) {
+    if (img == NULL || schemaFile == NULL) {
+        return false;
+    }
+    
+    // convert SVG strcut to doc and check for validity against schemaFile
+    xmlDoc *doc = SVGToDoc(img);
+    if (doc == NULL) {
+        return false;
+    }
+
+    if(!validSVG(doc, schemaFile)) {
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return false;
+    }
+
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    
+    // now check for constraints of the values in the struct //
+
+    // rectangle constraints
+    void *data;
+    List *objects = getRects(img);
+    ListIterator iter = createIterator(objects);
+
+    // check for negative height or width and  null attributes pointer
+    while((data = nextElement(&iter)) != NULL) {
+        Rectangle *rect = (Rectangle *)data;
+
+        if (rect -> otherAttributes == NULL || rect -> width < 0 || rect -> height < 0) {
+            freeList(objects);
+            return false;
+        }
+
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(rect -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+    // circle constraints
+    objects = getCircles(img);
+    iter = createIterator(objects);
+
+    // check for null attribute list or negative radius
+    while((data = nextElement(&iter)) != NULL) {
+        Circle *circle = (Circle *)data;
+
+        if (circle -> otherAttributes == NULL || circle -> r < 0) {
+            freeList(objects);
+            return false;
+        }
+
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(circle -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+    // path constraints
+    objects = getPaths(img);
+    iter = createIterator(objects);
+
+    // check for null attribute list or null data pointer
+    while((data = nextElement(&iter)) != NULL) {
+        Path *path = (Path *)data;
+
+        if (path -> otherAttributes == NULL || path -> data == NULL) {
+            freeList(objects);
+            return false;
+        }
+        
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(path -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+    // Group constraints
+    objects = getGroups(img);
+    iter = createIterator(objects);
+
+    while((data = nextElement(&iter)) != NULL) {
+        Group *group = (Group *)data;
+        
+        // check for null shape or attribute lists
+        if (group -> rectangles == NULL || group -> circles == NULL || group -> paths == NULL
+        || group -> groups == NULL || group -> otherAttributes == NULL) {
+            freeList(objects);
+            return false;
+        }
+        
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(group -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+
     return true;
 }
 

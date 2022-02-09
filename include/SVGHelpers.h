@@ -43,12 +43,12 @@ bool validSVG(xmlDoc *img, const char *xsdFile);
 
 xmlDoc *SVGToDoc(const SVG *img);
 
-bool createRectNodes(xmlNode *svgNode, const SVG *img);
+bool createRectNodes(xmlNode *svgNode, List *rectangles);
 
-bool createCircleNodes(xmlNode *svgNode, const SVG *img);
+bool createCircleNodes(xmlNode *svgNode, List *circles);
 
-bool createPathNodes(xmlNode *svgNode, const SVG *img);
+bool createPathNodes(xmlNode *svgNode, List *paths);
 
-bool createGroupNodes(xmlNode *svgNode, const SVG *img);
+bool createGroupNodes(xmlNode *svgNode, List *groups);
 
 void createProps(xmlNode *node, List *attributes);
