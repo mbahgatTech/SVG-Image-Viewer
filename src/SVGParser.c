@@ -832,7 +832,28 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
 }
 
 void addComponent(SVG* img, elementType type, void* newElement) {
+    if (img == NULL || newElement == NULL) {
+        return;
+    }
+    
+    // function only handles rectangles, circles and paths
 
+    // check for elementType and add newElement to the list of its type
+    if (type == RECT) {
+        if (img -> rectangles) {
+            insertBack(img -> rectangles, newElement);
+        }
+    }
+    else if (type == CIRC) {
+        if (img -> circles) {
+            insertBack(img -> circles, newElement); 
+        }
+    }
+    else if(type == PATH) {
+        if (img -> paths) {
+            insertBack(img -> paths, newElement);
+        }
+    }
 }
 
 char* attrToJSON(const Attribute *a) {
