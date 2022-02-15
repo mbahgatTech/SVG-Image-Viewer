@@ -857,7 +857,25 @@ void addComponent(SVG* img, elementType type, void* newElement) {
 }
 
 char* attrToJSON(const Attribute *a) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+
+    if (a == NULL || a -> name == NULL) {
+        return jsonString;
+    }
+    
+    // copy attribute contents to jsonString in JSON format
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(a -> name) +
+                        strlen("\"name\":\"\",\"value\":\"\"") + strlen(a -> value) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"name\":\"");
+    strcat(jsonString, a -> name);
+    strcat(jsonString,"\",\"value\":\"");
+    strcat(jsonString, a -> value);
+    strcat(jsonString, "\"}");
+
+    return jsonString;
 }
 
 char* circleToJSON(const Circle *c) {
@@ -877,7 +895,39 @@ char* groupToJSON(const Group *g) {
 }
 
 char* attrListToJSON(const List *list) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all attributes and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = attrToJSON((Attribute *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current attribute string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
 }
 
 char* circListToJSON(const List *list) {
