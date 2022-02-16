@@ -883,12 +883,12 @@ char* circleToJSON(const Circle *c) {
     char *jsonString = malloc(sizeof(char) * 3);
     strcpy(jsonString, "{}");
     
-    if (c == NULL) {
+    if (c == NULL || c -> otherAttributes == NULL) {
         return jsonString;
     }
     
     // copy circle contents to jsonString in JSON format
-    char *temp = malloc(sizeof(char) * 50);
+    char *temp = malloc(sizeof(char) * 500);
     sprintf(temp, "%.2f", c -> cx);
 
     jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
@@ -931,7 +931,7 @@ char* rectToJSON(const Rectangle *r) {
     char *jsonString = malloc(sizeof(char) * 3);
     strcpy(jsonString, "{}");
     
-    if (r == NULL) {
+    if (r == NULL || r -> otherAttributes == NULL) {
         return jsonString;
     }
     
@@ -985,7 +985,7 @@ char* pathToJSON(const Path *p) {
     char *jsonString = malloc(sizeof(char) * 3);
     strcpy(jsonString, "{}");
     
-    if (p == NULL) {
+    if (p == NULL || p -> otherAttributes == NULL || p -> data == NULL) {
         return jsonString;
     }
     
@@ -1018,7 +1018,38 @@ char* pathToJSON(const Path *p) {
 }
 
 char* groupToJSON(const Group *g) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (g == NULL || g -> rectangles == NULL || g -> circles == NULL ||
+            g -> paths == NULL || g -> groups == NULL) {
+        return jsonString;
+    }
+    
+    // add children and num of attributes to jsonString
+    int len = g -> rectangles -> length + g -> circles -> length + 
+            g -> paths -> length + g -> groups -> length;
+    char *temp = malloc(sizeof(char) * 500);
+    sprintf(temp, "%d", len); 
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                        strlen("\"children\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString,"\"children\":");
+    strcat(jsonString, temp);
+    
+    // copy num of otherAttributes into jsonString
+    sprintf(temp, "%d", g -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"numAttr\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    strcat(jsonString, "}"); 
+
+    free(temp); 
+    
+    return jsonString;
 }
 
 char* attrListToJSON(const List *list) {
@@ -1166,11 +1197,112 @@ char* pathListToJSON(const List *list) {
 }
 
 char* groupListToJSON(const List *list) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all groups and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = groupToJSON((Group *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current group string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
 }
 
 char* SVGtoJSON(const SVG* img) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (img == NULL) {
+        return jsonString;
+    }
+    
+    // copy img contents to jsonString in JSON format // 
+
+    // get lists and add their lengths to jsonString
+    char *temp = malloc(sizeof(char) * 500);
+    List *objects = getRects(img);
+    if (objects == NULL) {
+        // return default string if list is null
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numRect\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"numRect\":");
+    strcat(jsonString, temp);
+    freeList(objects);
+    
+    // get number of circles
+    objects = getCircles(img);
+    if (objects == NULL) {
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numCirc\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numCirc\":");
+    strcat(jsonString, temp);
+    freeList(objects);
+
+    // get number of paths    
+    objects = getPaths(img);
+    if (objects == NULL) {
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numPaths\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numPaths\":");
+    strcat(jsonString, temp);
+    freeList(objects);
+
+    // get number of groups
+    objects = getGroups(img);
+    if (objects == NULL) {
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numGroups\":,") + strlen(temp) + 2));
+    strcat(jsonString,",\"numGroups\":");
+    strcat(jsonString, temp); 
+    strcat(jsonString, "}");
+    freeList(objects);
+
+    free(temp); 
+    
+    return jsonString;
 }
 
 

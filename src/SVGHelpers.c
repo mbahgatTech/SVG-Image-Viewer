@@ -446,8 +446,6 @@ void addInnerGroups(List *groups, List *allGroups) {
         // add groups list in curent group to the allGroups
         addInnerGroups(temp -> groups, allGroups);
     }
-
-
 }
 
 // delete function that does nothing to its data
