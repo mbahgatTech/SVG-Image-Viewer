@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: February 9th 2022
+Last Revision Date: February 16th 2022
 */
 
 #include "SVGHelpers.h"
@@ -910,6 +910,7 @@ char *getField(char *jsonString, char *field) {
     // token value using :,} delims
     buffer = strtok(NULL, ":,}");
     if (buffer == NULL) {
+        free(temp);
         return NULL;
     }
     

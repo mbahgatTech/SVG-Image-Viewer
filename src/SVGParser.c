@@ -1347,11 +1347,94 @@ SVG* JSONtoSVG(const char* svgString) {
 }
 
 Rectangle* JSONtoRect(const char* svgString) {
-    return NULL;
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    // set deafult values for the struct elements
+    Rectangle *rect = malloc(sizeof(Rectangle));
+    rect -> x = 0;
+    rect -> y = 0;
+    rect -> height = 0;
+    rect -> width = 0;
+    strcpy(rect -> units, "");
+    rect -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+
+    // parse svgString for its attributes
+    char *tempUnits = rect -> units; // point to units element
+    char *temp = getField((char *)svgString, "x");
+    if (temp != NULL) {
+        rect -> x = getUnits(tempUnits, temp);
+        free(temp);
+    }
+    
+    temp = getField((char *)svgString, "y");
+    if (temp != NULL) {
+        rect -> y = getUnits(tempUnits, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "w");
+    if (temp != NULL) {
+        rect -> width = getUnits(tempUnits, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "h");
+    if (temp != NULL) {
+        rect -> height = getUnits(tempUnits, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "units");
+    if (temp != NULL) {
+        strcpy(rect -> units, temp);
+        free(temp);
+    }
+
+    return rect;
 }
 
 Circle* JSONtoCircle(const char* svgString) {
-    return NULL;
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    // set deafult values for the struct elements
+    Circle *circle = malloc(sizeof(Circle));
+    circle -> cx = 0;
+    circle -> cy = 0;
+    circle -> r = 0;
+    strcpy(circle -> units, "");
+    circle -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+
+    // parse svgString for its attributes
+    char *tempUnits = circle -> units; // point to units element
+    char *temp = getField((char *)svgString, "cx");
+    if (temp != NULL) {
+        circle -> cx = getUnits(tempUnits, temp);
+        free(temp);
+    }
+    
+    temp = getField((char *)svgString, "cy");
+    if (temp != NULL) {
+        circle -> cy = getUnits(tempUnits, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "r");
+    if (temp != NULL) {
+        circle -> r = getUnits(tempUnits, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "units");
+    if (temp != NULL) {
+        strcpy(circle -> units, temp);
+        free(temp);
+    }
+
+    return circle;
 }
 
 
