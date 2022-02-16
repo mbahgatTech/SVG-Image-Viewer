@@ -50,8 +50,8 @@ char *findDesc (xmlNode *node) {
 
 
 char *floatToString(float number) {
-    // 50 chars should be more than enough for any number
-    char *numString = malloc(sizeof(float) * 50); 
+    // 500 chars should be more than enough for any number
+    char *numString = malloc(sizeof(float) * 500); 
     sprintf(numString, "%f", number);
     
     // reallocate for memory to fit exactly the number
@@ -169,9 +169,15 @@ List *createRectangleList(xmlNode *img) {
         // realloc memory for a new rectangle pointer and allocate memory for rectangle
         rect = realloc(rect, sizeof(Rectangle *) * (counter + 1));
         rect[counter] = malloc(sizeof(Rectangle));
+
+        // set deafult values for the struct elements
+        rect[counter] -> x = 0;
+        rect[counter] -> y = 0;
+        rect[counter] -> height = 0;
+        rect[counter] -> width = 0;
         strcpy(rect[counter] -> units, "");
         tempUnits = rect[counter] -> units;
-
+        
         // initialize core rectangle properties 
         for (xmlAttr *attr = child-> properties; attr; attr = attr -> next) {
             if (strcmp((char *)attr -> name, "x") == 0) {
@@ -230,6 +236,11 @@ List *createCircleList(xmlNode *img) {
         // reallocate memory for a new Circle
         circles = realloc(circles, sizeof(Circle *) * (counter + 1));
         circles[counter] = malloc(sizeof(Circle));
+
+        // set defaults for struct elements
+        circles[counter] -> cx = 0;
+        circles[counter] -> cy = 0;
+        circles[counter] -> r = 0;
         strcpy(circles[counter] -> units, "");
         tempUnits = circles[counter] -> units;
 
@@ -283,13 +294,15 @@ List *createPathList(xmlNode *img) {
         
         // reallocate memory for a new path
         paths = realloc(paths, sizeof(Path *) * (counter + 1));
+        paths[counter] = malloc(sizeof(Path) + sizeof(char));
+        strcpy(paths[counter] -> data, ""); 
 
         // initialize core Path property
         for (xmlAttr *attr = child-> properties; attr; attr = attr -> next) {
             if (strcmp((char *)attr -> name, "d") == 0) {
                 // allocate enough memory for structure and flexible array member
                 // to fit the value of "d" attribute of the path element 
-                paths[counter] = malloc(sizeof(Path) + sizeof(char) * (strlen((char *)attr -> children -> content) + 1));
+                paths[counter] = realloc(paths[counter], sizeof(Path) + sizeof(char) * (strlen((char *)attr -> children -> content) + 1));
                 strcpy(paths[counter] -> data, (char *)attr -> children -> content);
                 break;
             }

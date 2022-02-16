@@ -927,11 +927,94 @@ char* circleToJSON(const Circle *c) {
 }
 
 char* rectToJSON(const Rectangle *r) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (r == NULL) {
+        return jsonString;
+    }
+    
+    // copy rectangle contents to jsonString in JSON format
+    char *temp = malloc(sizeof(char) * 500);
+    sprintf(temp, "%.2f", r -> x);
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"x\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"x\":");
+    strcat(jsonString, temp);
+
+    sprintf(temp, "%.2f", r -> y);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"y\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"y\":");
+    strcat(jsonString, temp);
+    
+    sprintf(temp, "%.2f", r -> width);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"w\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"w\":");
+    strcat(jsonString, temp); 
+
+    sprintf(temp, "%.2f", r -> height);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"h\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"h\":");
+    strcat(jsonString, temp);  
+
+    sprintf(temp, "%d", r -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numAttr\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                            strlen(",\"units\":\"\"}") + strlen(r -> units) + 1));
+    strcat(jsonString,",\"units\":\"");
+    strcat(jsonString, r -> units);
+    strcat(jsonString, "\"}"); 
+
+    free(temp); 
+    
+    return jsonString;
 }
 
 char* pathToJSON(const Path *p) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (p == NULL) {
+        return jsonString;
+    }
+    
+    // copy up to 64 characters of the d attribute into jsonString 
+    char *temp = malloc(sizeof(char) * 65); 
+    strncpy(temp, p -> data, sizeof(char) * 64);
+
+    // truncate data after 64 chars
+    if (strlen(p -> data) >= 64) {
+        temp[64] = '\0';
+    }
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                        strlen("\"d\":\"\"") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString,"\"d\":\"");
+    strcat(jsonString, temp);
+    strcat(jsonString, "\"");
+    
+    // copy num of otherAttributes into jsonString
+    sprintf(temp, "%d", p -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"numAttr\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    strcat(jsonString, "}"); 
+
+    free(temp); 
+    
+    return jsonString;
 }
 
 char* groupToJSON(const Group *g) {
@@ -1011,11 +1094,75 @@ char* circListToJSON(const List *list) {
 }
 
 char* rectListToJSON(const List *list) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all rectangles and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = rectToJSON((Rectangle *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current rectangle string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
 }
 
 char* pathListToJSON(const List *list) {
-    return NULL;
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all paths and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = pathToJSON((Path *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current path string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
 }
 
 char* groupListToJSON(const List *list) {
