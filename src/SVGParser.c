@@ -414,7 +414,7 @@ int numAttr(const SVG* img) {
 }
 
 SVG* createValidSVG(const char* fileName, const char* schemaFile) {
-     LIBXML_TEST_VERSION
+    LIBXML_TEST_VERSION
 
     if (fileName == NULL || schemaFile == NULL) {
         return NULL;
@@ -1303,6 +1303,55 @@ char* SVGtoJSON(const SVG* img) {
     free(temp); 
     
     return jsonString;
+}
+
+SVG* JSONtoSVG(const char* svgString) {
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    SVG *img = malloc(sizeof(SVG));
+
+    // initialize ns, title amd desc with default values
+    strcpy(img -> namespace, "http://www.w3.org/2000/svg");
+    strcpy(img -> title, "");
+    strcpy(img -> description, "");
+
+    // parse svgString for title and desc
+    char *temp = getField((char *)svgString, "title");
+    if (temp != NULL) {
+        strcpy(img -> title, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "descr");
+    if (temp != NULL) {
+        strcpy(img -> description, temp);
+        free(temp);
+    }
+
+    // initialize empty lists 
+    img -> rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+    img -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
+    img -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
+    img -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    img -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+    
+    // indicates failure of list initialization and should return null 
+    if (img -> rectangles == NULL || img -> circles == NULL || img -> paths == NULL
+    || img -> groups == NULL || img -> otherAttributes == NULL) {
+        return NULL;
+    }
+
+    return img;
+}
+
+Rectangle* JSONtoRect(const char* svgString) {
+    return NULL;
+}
+
+Circle* JSONtoCircle(const char* svgString) {
+    return NULL;
 }
 
 

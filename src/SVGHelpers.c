@@ -884,3 +884,54 @@ bool editAttributes(List *otherAttributes, Attribute *newAttribute) {
 
     return true;
 }
+
+char *getField(char *jsonString, char *field) {
+    if (jsonString == NULL || field == NULL) {
+        return NULL;
+    }
+    
+    // copy jsonString into temp and tokenize it against json chars
+    char *buffer;
+    char *temp = malloc(sizeof(char) * (strlen(jsonString) + 1));
+    strcpy(temp, jsonString);
+
+    // get rid of the first token '{'
+    buffer = strtok(temp, "\"");
+    while (strcmp(buffer, "{") == 0) {
+        buffer = strtok(NULL, "\"");
+    }
+    
+    // tokenize fields until a field with name matching field is reached
+    while (buffer != NULL && strcmp(buffer, field) != 0) {
+        buffer = strtok(NULL, ",");        
+        buffer = strtok(NULL, "\"");
+    }
+    
+    // token value using :,} delims
+    buffer = strtok(NULL, ":,}");
+    if (buffer == NULL) {
+        return NULL;
+    }
+    
+    // buffer overlaps with temp so I cant copy it directly to temp
+    char *temp2 = malloc(sizeof(char) * (strlen(buffer) + 1));
+    strcpy(temp2, buffer);    
+    strcpy(temp, temp2);
+
+    // remove quotes from returned string
+    if (temp2[0] == '\"' && temp2[strlen(temp2) - 1] == '\"') {
+        buffer = strtok(temp2, "\"");
+        
+        if (buffer == NULL || strlen(buffer) == 0) {
+            strcpy(temp, "");
+        }
+        else {
+            strcpy(temp, buffer);
+        }
+    }
+    // reallocate appropriate memory for temp and return it
+    temp = realloc(temp, sizeof(char) * (strlen(temp) + 1));
+    free(temp2);
+
+    return temp;
+}

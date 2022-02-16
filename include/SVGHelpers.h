@@ -54,3 +54,5 @@ bool createGroupNodes(xmlNode *svgNode, List *groups);
 void createProps(xmlNode *node, List *attributes);
 
 bool editAttributes(List *otherAttributes, Attribute *newAttribute);
+
+char *getField(char *jsonString, char *field);
