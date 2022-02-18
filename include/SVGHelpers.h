@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: January 26th 2022
+Last Revision Date: February 18th 2022
 */
 
 #include <string.h>
@@ -17,7 +17,7 @@ char *findDesc (xmlNode *node);
 
 char *floatToString(float number);
 
-float getUnits(char *units, char *string);
+bool getUnits(char *units, char *string, float *value);
 
 List *createAttributeList(xmlNode *node, char **coreAttributes, int length);
 
@@ -38,3 +38,21 @@ void addGroupPaths(List *groups, List *paths);
 void addInnerGroups(List *groups, List *allGroups);
 
 void dummyDel(void *data);
+
+bool validSVG(xmlDoc *img, const char *xsdFile);
+
+xmlDoc *SVGToDoc(const SVG *img);
+
+bool createRectNodes(xmlNode *svgNode, List *rectangles);
+
+bool createCircleNodes(xmlNode *svgNode, List *circles);
+
+bool createPathNodes(xmlNode *svgNode, List *paths);
+
+bool createGroupNodes(xmlNode *svgNode, List *groups);
+
+void createProps(xmlNode *node, List *attributes);
+
+bool editAttributes(List *otherAttributes, Attribute *newAttribute);
+
+char *getField(char *jsonString, char *field);

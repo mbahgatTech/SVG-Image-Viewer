@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: January 26th 2022
+Last Revision Date: February 18th 2022
 */
 
 
@@ -16,12 +16,21 @@ SVG* createSVG(const char* fileName) {
 
     xmlDoc *svgImg = xmlReadFile(fileName, NULL, 0);
     if (svgImg == NULL) {
+        xmlCleanupParser();
         return NULL;
     }
     
     xmlNode *svgNode = xmlDocGetRootElement(svgImg);
+    if (svgNode == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
+        return NULL;
+    }
+    
     SVG *tempSVG = malloc(sizeof(SVG));
-    if (svgNode == NULL || tempSVG == NULL) {
+    if (tempSVG == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
         return NULL;
     }
     
@@ -39,12 +48,14 @@ SVG* createSVG(const char* fileName) {
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
         strncpy(tempSVG -> title, tempPtr, 255);
+        tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
         strncpy(tempSVG -> description, tempPtr, 255);
+        tempSVG -> description[255] = '\0';
     }
 
     // initialize lists with NULL for now
@@ -90,30 +101,41 @@ char* SVGToString(const SVG* img) {
     strcat(svgString, "\n");
 
     // copy SVG lists
-    char *temp = toString(img -> rectangles);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    char *temp;
+    if(img -> rectangles) {
+        temp = toString(img -> rectangles);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
 
-    temp = toString(img -> circles);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    if(img -> circles) {
+        temp = toString(img -> circles);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
 
-    temp = toString(img -> paths);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    if(img -> paths) {
+        temp = toString(img -> paths);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
 
-    temp = toString(img -> groups);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
-    
-    temp = toString(img -> otherAttributes);
-    svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
-    strcat(svgString, temp);
-    free(temp);
+    if (img -> groups) {
+        temp = toString(img -> groups);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
+
+    if (img -> otherAttributes) {
+        temp = toString(img -> otherAttributes);
+        svgString = realloc(svgString, sizeof(char) * (strlen(svgString) + strlen(temp) + 1));
+        strcat(svgString, temp);
+        free(temp);
+    }
     
     return svgString;
 }
@@ -396,6 +418,1059 @@ int numAttr(const SVG* img) {
     return numAttrs; 
 }
 
+SVG* createValidSVG(const char* fileName, const char* schemaFile) {
+    LIBXML_TEST_VERSION
+
+    if (fileName == NULL || schemaFile == NULL) {
+        return NULL;
+    }
+
+    xmlDoc *svgImg = xmlReadFile(fileName, NULL, 0);
+    if (svgImg == NULL) {
+        xmlCleanupParser();
+        return NULL;
+    }
+
+    // validate xmlDoc against schemaFile
+    if (!validSVG(svgImg, schemaFile)) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
+        return NULL;
+    }
+    
+    xmlNode *svgNode = xmlDocGetRootElement(svgImg);
+    if (svgNode == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
+        return NULL;
+    }
+    
+    SVG *tempSVG = malloc(sizeof(SVG));
+    if (tempSVG == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
+        return NULL;
+    }
+    
+    // initialize string with empty values
+    strcpy(tempSVG -> namespace, "");
+    strcpy(tempSVG -> title, "");
+    strcpy(tempSVG -> description, "");
+
+    // copy only the first 255 chars or length of the first namespace to fit into
+    // our SVG namespace element. Note: only 1 namesapce is assumed in this program
+    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, 255);
+
+
+    char *tempPtr = findTitle(svgNode);
+    // copy first 255 or length chars of title
+    if (tempPtr != NULL) {
+        strncpy(tempSVG -> title, tempPtr, 255);
+        tempSVG -> title[255] = '\0'; 
+    }
+    
+    tempPtr = findDesc(svgNode);
+    // copy first 255 or length chars of desc
+    if (tempPtr != NULL) {
+        strncpy(tempSVG -> description, tempPtr, 255);
+        tempSVG -> description[255] = '\0'; 
+    }
+
+    // initialize lists with NULL for now
+    tempSVG -> rectangles = createRectangleList(svgNode);
+    tempSVG -> circles = createCircleList(svgNode);
+    tempSVG -> paths = createPathList(svgNode);
+    tempSVG -> groups = createGroupList(svgNode);
+    tempSVG -> otherAttributes = createAttributeList(svgNode, NULL, 0);
+
+    // free svgImg object
+    xmlFreeDoc(svgImg);
+    
+    // free any global variables that may have been used by the parser
+    xmlCleanupParser();
+    return tempSVG;
+}
+
+bool writeSVG(const SVG* img, const char* fileName) {
+    if (img == NULL || fileName == NULL) {
+        return false;
+    }
+    
+    // create an xmlDoc from the SVG img
+    xmlDoc *imgDoc = SVGToDoc(img);
+    if(imgDoc == NULL) {
+        return false;
+    }
+
+    // write the doc tree to the file 
+    if (xmlSaveFile(fileName, imgDoc) == -1) {
+        // -1 return means fail
+        xmlFreeDoc(imgDoc);
+        xmlCleanupParser();
+        return false;
+    }
+
+    xmlFreeDoc(imgDoc);
+    xmlCleanupParser();
+    
+    return true;
+}
+
+bool validateSVG(const SVG* img, const char* schemaFile) {
+    if (img == NULL || schemaFile == NULL) {
+        return false;
+    }
+    
+    // convert SVG strcut to doc and check for validity against schemaFile
+    xmlDoc *doc = SVGToDoc(img);
+    if (doc == NULL) {
+        return false;
+    }
+
+    if(!validSVG(doc, schemaFile)) {
+        xmlFreeDoc(doc);
+        xmlCleanupParser();
+        return false;
+    }
+
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
+    
+    // now check for constraints of the values in the struct //
+
+    // rectangle constraints
+    void *data;
+    List *objects = getRects(img);
+    ListIterator iter = createIterator(objects);
+
+    // check for negative height or width and  null attributes pointer
+    while((data = nextElement(&iter)) != NULL) {
+        Rectangle *rect = (Rectangle *)data;
+
+        if (rect -> otherAttributes == NULL || rect -> width < 0 || rect -> height < 0) {
+            freeList(objects);
+            return false;
+        }
+
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(rect -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+    // circle constraints
+    objects = getCircles(img);
+    iter = createIterator(objects);
+
+    // check for null attribute list or negative radius
+    while((data = nextElement(&iter)) != NULL) {
+        Circle *circle = (Circle *)data;
+
+        if (circle -> otherAttributes == NULL || circle -> r < 0) {
+            freeList(objects);
+            return false;
+        }
+
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(circle -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+    // path constraints
+    objects = getPaths(img);
+    iter = createIterator(objects);
+
+    // check for null attribute list or null data pointer
+    while((data = nextElement(&iter)) != NULL) {
+        Path *path = (Path *)data;
+
+        if (path -> otherAttributes == NULL || path -> data == NULL) {
+            freeList(objects);
+            return false;
+        }
+        
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(path -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+    // Group constraints
+    objects = getGroups(img);
+    iter = createIterator(objects);
+
+    while((data = nextElement(&iter)) != NULL) {
+        Group *group = (Group *)data;
+        
+        // check for null shape or attribute lists
+        if (group -> rectangles == NULL || group -> circles == NULL || group -> paths == NULL
+        || group -> groups == NULL || group -> otherAttributes == NULL) {
+            freeList(objects);
+            return false;
+        }
+        
+        // check all other attributes for invalid name pointer
+        void *attrs;
+        ListIterator iter2 = createIterator(group -> otherAttributes);
+        while((attrs = nextElement(&iter2)) != NULL) {
+            Attribute *currAttr = (Attribute *)attrs;
+            if (currAttr -> name == NULL) {
+                freeList(objects);
+                return false;
+            }
+        }
+    }
+    freeList(objects);
+
+
+    return true;
+}
+
+bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newAttribute) {
+    if (img == NULL || newAttribute == NULL || newAttribute -> name == NULL || 
+    newAttribute -> value == NULL) {
+        return false;
+    }
+    
+    // set attribute for SVG struct
+    if (elemType == SVG_IMG) {
+        if (img -> otherAttributes == NULL) {
+            return false;
+        }
+        
+        // newAttribute will be either appended or edited into otherAttributes
+        if (!editAttributes(img -> otherAttributes, newAttribute)) {
+            return false;
+        }
+    }// check the type of element and insert the attribute for element in elemIndex
+    else if (elemType == RECT) {
+        if (img -> rectangles == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> rectangles);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> rectangles);
+        int i = 0;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                break;
+            }
+
+            i++;
+        }
+        // data is rectangle at elemIndex
+        Rectangle *rect = (Rectangle *)data;
+        char units[50];
+        // check if newAttribute is one of the core attributes
+        if(strcmp(newAttribute -> name, "x") == 0) {
+            if (!getUnits(units, newAttribute -> value, &rect -> x)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "y") == 0) {
+            if (!getUnits(units, newAttribute -> value, &rect -> y)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "width") == 0) {
+            if (!getUnits(units, newAttribute -> value, &rect -> width)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "height") == 0) {
+            if (!getUnits(units, newAttribute -> value, &rect -> height)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else {
+            // newAttribute will be either appended or edited into otherAttributes
+            if (!editAttributes(rect -> otherAttributes, newAttribute)) {
+                return false;
+            }
+        }
+    }
+    else if(elemType == CIRC) {
+        if (img -> circles == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> circles);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> circles);
+        int i = 0;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                break;
+            }
+
+            i++;
+        }
+        // data is circle at elemIndex
+        Circle *circle = (Circle *)data;
+        char units[50];
+        // check if newAttribute is one of the core attributes
+        if(strcmp(newAttribute -> name, "cx") == 0) {
+            if(!getUnits(units, newAttribute -> value, &circle -> cx)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "y") == 0) {
+            if(!getUnits(units, newAttribute -> value, &circle -> cy)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else if(strcmp(newAttribute -> name, "r") == 0) {
+            if(!getUnits(units, newAttribute -> value, &circle -> r)) {
+                return false;
+            }
+
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else {
+            // newAttribute will be either appended or edited into otherAttributes
+            if (!editAttributes(circle -> otherAttributes, newAttribute)) {
+                return false;
+            }
+        }
+    } 
+    else if(elemType == PATH) {
+        if (img -> paths == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> paths);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> paths);
+        int i = 0;
+        Node *temp = iter.current;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                
+                break;
+            }
+            temp = temp -> next;
+
+            i++;
+        }
+
+        // data is path at elemIndex
+        Path *path = (Path *)data;
+        // check if newAttribute is one of the core attributes
+        if(strcmp(newAttribute -> name, "d") == 0) {
+            // reallocate Path for enough space for newAttribute value
+            path = realloc(path, sizeof(Path) + sizeof(char) * (strlen(newAttribute -> value) + 5));
+            strcpy(path -> data, newAttribute -> value);
+            temp -> data = path;
+            
+            free(newAttribute -> name);
+            free(newAttribute);
+        }
+        else {
+            // newAttribute will be either appended or edited into otherAttributes
+            if (!editAttributes(path -> otherAttributes, newAttribute)) {
+                return false;
+            }
+        }
+    }
+    else if(elemType == GROUP) {
+        if (img -> groups == NULL) {
+            return false;
+        }
+        
+        // check for valid index
+        int len = getLength(img -> groups);
+        if (elemIndex < 0 || elemIndex >= len) {
+            return false;
+        }
+
+        void *data;
+        ListIterator iter = createIterator(img -> groups);
+        int i = 0;
+        while ((data = nextElement(&iter)) != NULL && i < len) {
+            if (i == elemIndex) {
+                break;
+            }
+
+            i++;
+        }
+        // data is group at elemIndex
+        Group *group = (Group *)data;
+        // newAttribute will be either appended or edited into otherAttributes
+        if (!editAttributes(group -> otherAttributes, newAttribute)) {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+    
+    return true;
+}
+
+void addComponent(SVG* img, elementType type, void* newElement) {
+    if (img == NULL || newElement == NULL) {
+        return;
+    }
+    
+    // function only handles rectangles, circles and paths
+
+    // check for elementType and add newElement to the list of its type
+    if (type == RECT) {
+        if (img -> rectangles) {
+            insertBack(img -> rectangles, newElement);
+        }
+    }
+    else if (type == CIRC) {
+        if (img -> circles) {
+            insertBack(img -> circles, newElement); 
+        }
+    }
+    else if(type == PATH) {
+        if (img -> paths) {
+            insertBack(img -> paths, newElement);
+        }
+    }
+}
+
+char* attrToJSON(const Attribute *a) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+
+    if (a == NULL || a -> name == NULL) {
+        return jsonString;
+    }
+    
+    // copy attribute contents to jsonString in JSON format
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(a -> name) +
+                        strlen("\"name\":\"\",\"value\":\"\"") + strlen(a -> value) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"name\":\"");
+    strcat(jsonString, a -> name);
+    strcat(jsonString,"\",\"value\":\"");
+    strcat(jsonString, a -> value);
+    strcat(jsonString, "\"}");
+
+    return jsonString;
+}
+
+char* circleToJSON(const Circle *c) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (c == NULL || c -> otherAttributes == NULL) {
+        return jsonString;
+    }
+    
+    // copy circle contents to jsonString in JSON format
+    char *temp = malloc(sizeof(char) * 500);
+    sprintf(temp, "%.2f", c -> cx);
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"cx\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"cx\":");
+    strcat(jsonString, temp);
+
+    sprintf(temp, "%.2f", c -> cy);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"cy\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"cy\":");
+    strcat(jsonString, temp);
+    
+    sprintf(temp, "%.2f", c -> r);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"r\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"r\":");
+    strcat(jsonString, temp);  
+
+    sprintf(temp, "%d", c -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numAttr\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                            strlen(",\"units\":\"\"}") + strlen(c -> units) + 1));
+    strcat(jsonString,",\"units\":\"");
+    strcat(jsonString, c -> units);
+    strcat(jsonString, "\"}"); 
+
+    free(temp); 
+    
+    return jsonString;
+}
+
+char* rectToJSON(const Rectangle *r) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (r == NULL || r -> otherAttributes == NULL) {
+        return jsonString;
+    }
+    
+    // copy rectangle contents to jsonString in JSON format
+    char *temp = malloc(sizeof(char) * 500);
+    sprintf(temp, "%.2f", r -> x);
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"x\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"x\":");
+    strcat(jsonString, temp);
+
+    sprintf(temp, "%.2f", r -> y);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"y\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"y\":");
+    strcat(jsonString, temp);
+    
+    sprintf(temp, "%.2f", r -> width);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"w\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"w\":");
+    strcat(jsonString, temp); 
+
+    sprintf(temp, "%.2f", r -> height);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"h\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"h\":");
+    strcat(jsonString, temp);  
+
+    sprintf(temp, "%d", r -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numAttr\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                            strlen(",\"units\":\"\"}") + strlen(r -> units) + 1));
+    strcat(jsonString,",\"units\":\"");
+    strcat(jsonString, r -> units);
+    strcat(jsonString, "\"}"); 
+
+    free(temp); 
+    
+    return jsonString;
+}
+
+char* pathToJSON(const Path *p) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (p == NULL || p -> otherAttributes == NULL || p -> data == NULL) {
+        return jsonString;
+    }
+    
+    // copy up to 64 characters of the d attribute into jsonString 
+    char *temp = malloc(sizeof(char) * 65); 
+    strncpy(temp, p -> data, sizeof(char) * 64);
+
+    // truncate data after 64 chars
+    if (strlen(p -> data) >= 64) {
+        temp[64] = '\0';
+    }
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                        strlen("\"d\":\"\"") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString,"\"d\":\"");
+    strcat(jsonString, temp);
+    strcat(jsonString, "\"");
+    
+    // copy num of otherAttributes into jsonString
+    sprintf(temp, "%d", p -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"numAttr\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    strcat(jsonString, "}"); 
+
+    free(temp); 
+    
+    return jsonString;
+}
+
+char* groupToJSON(const Group *g) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (g == NULL || g -> rectangles == NULL || g -> circles == NULL ||
+            g -> paths == NULL || g -> groups == NULL) {
+        return jsonString;
+    }
+    
+    // add children and num of attributes to jsonString
+    int len = g -> rectangles -> length + g -> circles -> length + 
+            g -> paths -> length + g -> groups -> length;
+    char *temp = malloc(sizeof(char) * 500);
+    sprintf(temp, "%d", len); 
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                        strlen("\"children\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString,"\"children\":");
+    strcat(jsonString, temp);
+    
+    // copy num of otherAttributes into jsonString
+    sprintf(temp, "%d", g -> otherAttributes -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"numAttr\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"numAttr\":");
+    strcat(jsonString, temp);  
+    strcat(jsonString, "}"); 
+
+    free(temp); 
+    
+    return jsonString;
+}
+
+char* attrListToJSON(const List *list) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all attributes and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = attrToJSON((Attribute *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current attribute string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
+}
+
+char* circListToJSON(const List *list) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all circles and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = circleToJSON((Circle *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current circle string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
+}
+
+char* rectListToJSON(const List *list) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all rectangles and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = rectToJSON((Rectangle *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current rectangle string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
+}
+
+char* pathListToJSON(const List *list) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all paths and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = pathToJSON((Path *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current path string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
+}
+
+char* groupListToJSON(const List *list) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "[]");
+
+    if (list == NULL) {
+        return jsonString;
+    }
+    
+    // start the list string with '['
+    strcpy(jsonString, "[");
+
+    void *data;
+    ListIterator iter = createIterator((List *)list);
+    // loop through all groups and add their strings to jsonString
+    while ((data = nextElement(&iter)) != NULL) {
+        char *temp = groupToJSON((Group *)data);
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(temp) + 2));
+        
+        // add a comma before the current group string only when
+        // jsonString only contains [. means this is the first element.
+        if (strcmp(jsonString, "[") != 0) {
+            strcat(jsonString, ",");
+        }
+        
+        strcat(jsonString, temp);
+        free(temp);
+    }
+    
+    // close the list string with ] char
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+
+    return jsonString;
+}
+
+char* SVGtoJSON(const SVG* img) {
+    // default string 
+    char *jsonString = malloc(sizeof(char) * 3);
+    strcpy(jsonString, "{}");
+    
+    if (img == NULL) {
+        return jsonString;
+    }
+    
+    // copy img contents to jsonString in JSON format // 
+
+    // get lists and add their lengths to jsonString
+    char *temp = malloc(sizeof(char) * 500);
+    List *objects = getRects(img);
+    if (objects == NULL) {
+        // return default string if list is null
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numRect\":") + strlen(temp) + 1));
+    strcpy(jsonString, "{");
+    strcat(jsonString, "\"numRect\":");
+    strcat(jsonString, temp);
+    freeList(objects);
+    
+    // get number of circles
+    objects = getCircles(img);
+    if (objects == NULL) {
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numCirc\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numCirc\":");
+    strcat(jsonString, temp);
+    freeList(objects);
+
+    // get number of paths    
+    objects = getPaths(img);
+    if (objects == NULL) {
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numPaths\":,") + strlen(temp) + 1));
+    strcat(jsonString,",\"numPaths\":");
+    strcat(jsonString, temp);
+    freeList(objects);
+
+    // get number of groups
+    objects = getGroups(img);
+    if (objects == NULL) {
+        strcpy(jsonString, "{}");
+        return jsonString;
+    }
+    sprintf(temp, "%d", objects -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen("\"numGroups\":,") + strlen(temp) + 2));
+    strcat(jsonString,",\"numGroups\":");
+    strcat(jsonString, temp); 
+    strcat(jsonString, "}");
+    freeList(objects);
+
+    free(temp); 
+    
+    return jsonString;
+}
+
+SVG* JSONtoSVG(const char* svgString) {
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    SVG *img = malloc(sizeof(SVG));
+
+    // initialize ns, title amd desc with default values
+    strcpy(img -> namespace, "http://www.w3.org/2000/svg");
+    strcpy(img -> title, "");
+    strcpy(img -> description, "");
+
+    // parse svgString for title and desc
+    char *temp = getField((char *)svgString, "title");
+    if (temp != NULL) {
+        strcpy(img -> title, temp);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "descr");
+    if (temp != NULL) {
+        strcpy(img -> description, temp);
+        free(temp);
+    }
+
+    // initialize empty lists 
+    img -> rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+    img -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
+    img -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
+    img -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
+    img -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+    
+    // indicates failure of list initialization and should return null 
+    if (img -> rectangles == NULL || img -> circles == NULL || img -> paths == NULL
+    || img -> groups == NULL || img -> otherAttributes == NULL) {
+        return NULL;
+    }
+
+    return img;
+}
+
+Rectangle* JSONtoRect(const char* svgString) {
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    // set deafult values for the struct elements
+    Rectangle *rect = malloc(sizeof(Rectangle));
+    rect -> x = 0;
+    rect -> y = 0;
+    rect -> height = 0;
+    rect -> width = 0;
+    strcpy(rect -> units, "");
+    rect -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+
+    // parse svgString for its attributes
+    char *tempUnits = rect -> units; // point to units element
+    char *temp = getField((char *)svgString, "x");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &rect -> x);
+        free(temp);
+    }
+    
+    temp = getField((char *)svgString, "y");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &rect -> y);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "w");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &rect -> width);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "h");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &rect -> height);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "units");
+    if (temp != NULL) {
+        strcpy(rect -> units, temp);
+        free(temp);
+    }
+
+    return rect;
+}
+
+Circle* JSONtoCircle(const char* svgString) {
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    // set deafult values for the struct elements
+    Circle *circle = malloc(sizeof(Circle));
+    circle -> cx = 0;
+    circle -> cy = 0;
+    circle -> r = 0;
+    strcpy(circle -> units, "");
+    circle -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+
+    // parse svgString for its attributes
+    char *tempUnits = circle -> units; // point to units element
+    char *temp = getField((char *)svgString, "cx");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &circle -> cx);
+        free(temp);
+    }
+    
+    temp = getField((char *)svgString, "cy");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &circle -> cy);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "r");
+    if (temp != NULL) {
+        getUnits(tempUnits, temp, &circle -> r);
+        free(temp);
+    }
+
+    temp = getField((char *)svgString, "units");
+    if (temp != NULL) {
+        strcpy(circle -> units, temp);
+        free(temp);
+    }
+
+    return circle;
+}
+
+
 void deleteAttribute( void* data) {
     free(((Attribute *) data) -> name);
     
@@ -443,7 +1518,7 @@ int compareAttributes(const void *first, const void *second) {
 }  
 
 
-void deleteGroup(void* data){
+void deleteGroup(void* data) {
     // free lists inside the group struct
     freeList(((Group *)data) -> rectangles);
     freeList(((Group *)data) -> circles);
