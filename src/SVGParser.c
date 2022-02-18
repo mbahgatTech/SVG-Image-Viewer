@@ -16,16 +16,19 @@ SVG* createSVG(const char* fileName) {
 
     xmlDoc *svgImg = xmlReadFile(fileName, NULL, 0);
     if (svgImg == NULL) {
+        xmlCleanupParser();
         return NULL;
     }
     
     xmlNode *svgNode = xmlDocGetRootElement(svgImg);
-    SVG *tempSVG = malloc(sizeof(SVG));
     if (svgNode == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
         return NULL;
     }
     
-    if (tempSVG == NULL || svgNode == NULL) {
+    SVG *tempSVG = malloc(sizeof(SVG));
+    if (tempSVG == NULL) {
         xmlFreeDoc(svgImg);
         xmlCleanupParser();
         return NULL;
@@ -45,12 +48,14 @@ SVG* createSVG(const char* fileName) {
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
         strncpy(tempSVG -> title, tempPtr, 255);
+        tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
         strncpy(tempSVG -> description, tempPtr, 255);
+        tempSVG -> description[255] = '\0';
     }
 
     // initialize lists with NULL for now
@@ -422,21 +427,26 @@ SVG* createValidSVG(const char* fileName, const char* schemaFile) {
 
     xmlDoc *svgImg = xmlReadFile(fileName, NULL, 0);
     if (svgImg == NULL) {
+        xmlCleanupParser();
         return NULL;
     }
 
     // validate xmlDoc against schemaFile
     if (!validSVG(svgImg, schemaFile)) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
         return NULL;
     }
     
     xmlNode *svgNode = xmlDocGetRootElement(svgImg);
-    SVG *tempSVG = malloc(sizeof(SVG));
     if (svgNode == NULL) {
+        xmlFreeDoc(svgImg);
+        xmlCleanupParser();
         return NULL;
     }
     
-    if (tempSVG == NULL || svgNode == NULL) {
+    SVG *tempSVG = malloc(sizeof(SVG));
+    if (tempSVG == NULL) {
         xmlFreeDoc(svgImg);
         xmlCleanupParser();
         return NULL;
@@ -456,12 +466,14 @@ SVG* createValidSVG(const char* fileName, const char* schemaFile) {
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
         strncpy(tempSVG -> title, tempPtr, 255);
+        tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
         strncpy(tempSVG -> description, tempPtr, 255);
+        tempSVG -> description[255] = '\0'; 
     }
 
     // initialize lists with NULL for now
