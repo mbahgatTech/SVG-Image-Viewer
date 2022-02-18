@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: February 16th 2022
+Last Revision Date: February 18th 2022
 */
 
 #include <string.h>
@@ -17,7 +17,7 @@ char *findDesc (xmlNode *node);
 
 char *floatToString(float number);
 
-float getUnits(char *units, char *string);
+bool getUnits(char *units, char *string, float *value);
 
 List *createAttributeList(xmlNode *node, char **coreAttributes, int length);
 

@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: February 16th 2022
+Last Revision Date: February 18th 2022
 */
 
 #include "SVGHelpers.h"
@@ -60,9 +60,9 @@ char *floatToString(float number) {
     return numString;
 }
 
-float getUnits(char *units, char *string){
-    if (string == NULL || units == NULL) {
-        return -1; // indicates error
+bool getUnits(char *units, char *string, float *value) {
+    if (string == NULL || units == NULL || (!isdigit(string[0]) && string[0] != '.')) {
+        return false; // indicates error
     }
 
     char *unitString = NULL; 
@@ -85,10 +85,10 @@ float getUnits(char *units, char *string){
     strcpy(unitString, string); //now u can exclude units from the string
     unitString[i] = '\0';
 
-    float value = atof(unitString);
+    *value = atof(unitString);
     free(unitString);
 
-    return value;
+    return true;
 }
 
 List *createAttributeList(xmlNode *node, char **coreAttributes, int length) {
@@ -181,16 +181,16 @@ List *createRectangleList(xmlNode *img) {
         // initialize core rectangle properties 
         for (xmlAttr *attr = child-> properties; attr; attr = attr -> next) {
             if (strcmp((char *)attr -> name, "x") == 0) {
-                rect[counter] -> x = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &rect[counter] -> x);
             }
             else if (strcmp((char *)attr -> name, "y") == 0) {
-                rect[counter] -> y = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &rect[counter] -> y);
             }
             else if (strcmp((char *)attr -> name, "width") == 0) {
-                rect[counter] -> width = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &rect[counter] -> width);
             }
             else if (strcmp((char *)attr -> name, "height") == 0) {
-                rect[counter] -> height = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &rect[counter] -> height);
             }   
         } 
 
@@ -247,13 +247,13 @@ List *createCircleList(xmlNode *img) {
         // initialize core circle properties 
         for (xmlAttr *attr = child-> properties; attr; attr = attr -> next) {
             if (strcmp((char *)attr -> name, "cx") == 0) {
-                circles[counter] -> cx = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &circles[counter] -> cx);
             }
             else if (strcmp((char *)attr -> name, "cy") == 0) {
-                circles[counter] -> cy = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &circles[counter] -> cy);
             }
             else if (strcmp((char *)attr -> name, "r") == 0) {
-                circles[counter] -> r = getUnits(tempUnits, (char *)attr -> children -> content);
+                getUnits(tempUnits, (char *)attr -> children -> content, &circles[counter] -> r);
             }
         } 
 
@@ -861,22 +861,18 @@ bool editAttributes(List *otherAttributes, Attribute *newAttribute) {
 
     void *data;
     ListIterator iter = createIterator(otherAttributes);
-    Node *temp = iter.current;
+
     // check otherAttribute list if newAttribute already exists
     while ((data = nextElement(&iter)) != NULL) {
         Attribute *ptr = (Attribute *)data;
-        // case insensitive comparison
         if (strcmp(ptr -> name, newAttribute -> name) == 0) {
             // reallocate memory for the new value of the attribute
             ptr = realloc(ptr, sizeof(Attribute) + sizeof(char) * (strlen(newAttribute -> value) + 1));
             strcpy(ptr -> value, newAttribute -> value);
-            temp -> data = ptr;
 
-            free(newAttribute -> name);
-            free(newAttribute);
+            deleteAttribute(newAttribute);
             return true;
         }
-        temp = temp -> next;
     }
 
     // insert the attribute at the end of the otherAtribute list

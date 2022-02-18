@@ -1,6 +1,6 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: February 9th 2022
+Last Revision Date: February 18th 2022
 */
 
 
@@ -679,22 +679,34 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
         char units[50];
         // check if newAttribute is one of the core attributes
         if(strcmp(newAttribute -> name, "x") == 0) {
-            rect -> x = getUnits(units, newAttribute -> value);
+            if (!getUnits(units, newAttribute -> value, &rect -> x)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
         else if(strcmp(newAttribute -> name, "y") == 0) {
-            rect -> y = getUnits(units, newAttribute -> value);
+            if (!getUnits(units, newAttribute -> value, &rect -> y)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
         else if(strcmp(newAttribute -> name, "width") == 0) {
-            rect -> width = getUnits(units, newAttribute -> value);
+            if (!getUnits(units, newAttribute -> value, &rect -> width)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
         else if(strcmp(newAttribute -> name, "height") == 0) {
-            rect -> height = getUnits(units, newAttribute -> value);
+            if (!getUnits(units, newAttribute -> value, &rect -> height)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
@@ -731,17 +743,26 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
         char units[50];
         // check if newAttribute is one of the core attributes
         if(strcmp(newAttribute -> name, "cx") == 0) {
-            circle -> cx = getUnits(units, newAttribute -> value);
+            if(!getUnits(units, newAttribute -> value, &circle -> cx)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
         else if(strcmp(newAttribute -> name, "y") == 0) {
-            circle -> cy = getUnits(units, newAttribute -> value);
+            if(!getUnits(units, newAttribute -> value, &circle -> cy)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
         else if(strcmp(newAttribute -> name, "r") == 0) {
-            circle -> r = getUnits(units, newAttribute -> value);
+            if(!getUnits(units, newAttribute -> value, &circle -> r)) {
+                return false;
+            }
+
             free(newAttribute -> name);
             free(newAttribute);
         }
@@ -1364,25 +1385,25 @@ Rectangle* JSONtoRect(const char* svgString) {
     char *tempUnits = rect -> units; // point to units element
     char *temp = getField((char *)svgString, "x");
     if (temp != NULL) {
-        rect -> x = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &rect -> x);
         free(temp);
     }
     
     temp = getField((char *)svgString, "y");
     if (temp != NULL) {
-        rect -> y = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &rect -> y);
         free(temp);
     }
 
     temp = getField((char *)svgString, "w");
     if (temp != NULL) {
-        rect -> width = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &rect -> width);
         free(temp);
     }
 
     temp = getField((char *)svgString, "h");
     if (temp != NULL) {
-        rect -> height = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &rect -> height);
         free(temp);
     }
 
@@ -1412,19 +1433,19 @@ Circle* JSONtoCircle(const char* svgString) {
     char *tempUnits = circle -> units; // point to units element
     char *temp = getField((char *)svgString, "cx");
     if (temp != NULL) {
-        circle -> cx = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &circle -> cx);
         free(temp);
     }
     
     temp = getField((char *)svgString, "cy");
     if (temp != NULL) {
-        circle -> cy = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &circle -> cy);
         free(temp);
     }
 
     temp = getField((char *)svgString, "r");
     if (temp != NULL) {
-        circle -> r = getUnits(tempUnits, temp);
+        getUnits(tempUnits, temp, &circle -> r);
         free(temp);
     }
 
