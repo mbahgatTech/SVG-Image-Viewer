@@ -41,20 +41,20 @@ SVG* createSVG(const char* fileName) {
 
     // copy only the first 255 chars or length of the first namespace to fit into
     // our SVG namespace element. Note: only 1 namesapce is assumed in this program
-    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, 255);
+    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, sizeof(char) * 255);
 
 
     char *tempPtr = findTitle(svgNode);
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> title, tempPtr, 255);
+        strncpy(tempSVG -> title, tempPtr, sizeof(char) * 255);
         tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> description, tempPtr, 255);
+        strncpy(tempSVG -> description, tempPtr, sizeof(char) * 255);
         tempSVG -> description[255] = '\0';
     }
 
@@ -459,20 +459,20 @@ SVG* createValidSVG(const char* fileName, const char* schemaFile) {
 
     // copy only the first 255 chars or length of the first namespace to fit into
     // our SVG namespace element. Note: only 1 namesapce is assumed in this program
-    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, 255);
+    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, sizeof(char) * 255);
 
 
     char *tempPtr = findTitle(svgNode);
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> title, tempPtr, 255);
+        strncpy(tempSVG -> title, tempPtr, sizeof(char) * 255);
         tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> description, tempPtr, 255);
+        strncpy(tempSVG -> description, tempPtr, sizeof(char) * 255);
         tempSVG -> description[255] = '\0'; 
     }
 
@@ -1353,13 +1353,15 @@ SVG* JSONtoSVG(const char* svgString) {
     // parse svgString for title and desc
     char *temp = getField((char *)svgString, "title");
     if (temp != NULL) {
-        strcpy(img -> title, temp);
+        strncpy(img -> title, temp, sizeof(char) * 255);
+        img -> title[255] = '\0';
         free(temp);
     }
 
     temp = getField((char *)svgString, "descr");
     if (temp != NULL) {
-        strcpy(img -> description, temp);
+        strncpy(img -> description, temp, sizeof(char) * 255);
+        img -> description[255] = '\0';
         free(temp);
     }
 
