@@ -553,14 +553,9 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
 
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(rect -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(rect -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
@@ -579,14 +574,9 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
 
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(circle -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(circle -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
@@ -605,14 +595,9 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
         
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(path -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(path -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
@@ -632,18 +617,17 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
         
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(group -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(group -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
-
+    
+    // check other attributes of img for invalid name pointer
+    if (!checkValidAttrs(img -> otherAttributes)) {
+        return false;
+    }
 
     return true;
 }

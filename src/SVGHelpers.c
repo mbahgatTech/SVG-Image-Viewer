@@ -932,3 +932,26 @@ char *getField(char *jsonString, char *field) {
 
     return temp;
 }
+
+bool checkValidAttrs(List *attributes) {
+    if (attributes == NULL) {
+        return false;
+    }
+
+    // check all other attributes for invalid name pointer
+    void *attrs;
+    ListIterator iter2 = createIterator(attributes);
+
+    // iterate through all attributes in the list
+    while((attrs = nextElement(&iter2)) != NULL) {
+        Attribute *currAttr = (Attribute *)attrs;
+
+        // if name is null then its not a valid attribute list
+        if (currAttr -> name == NULL) {
+            // freeList(objects);
+            return false;
+        }
+    }
+
+    return true;
+}
