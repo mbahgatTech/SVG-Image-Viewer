@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SVG Image Viewer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SVG Image Viewer">
+    <meta name="keywords" content="SVG Image Viewer Editor">
+    <meta name="author" content="Mazen Bahgat">
+    <!-- Load jquery, bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <!-- Custom CSS End -->
+</head>
+<body>
+    <div id="intro">
+        <h1 id="title1">SVG Image Viewer</h1>
+    </div>
+    <!-- <h3>Download test</h3>
+    If the A3 stub is running and rects.svg exists in the uploads/ directory on the server, then clicking on the link below will download it from the server.<br>
+    <a href="rects.svg" download>rects.svg</a>
+    <p></p> -->
+    <!-- <hr> -->
+
+    <h3>File Log</h3>
+    <div class="file-log" id="log-panel">
+        <div class="fields">
+            <div class="fieldElems" id="elem1">
+                Image<br>(click to download)
+            </div>
+            <div class="fieldElems" id="name">
+                File Name<br>(click to download)
+            </div>
+            <div class="fieldElems">File Size</div>
+            <div class="fieldElems">Number of Rectangles</div>
+            <div class="fieldElems">Number of Circles</div>
+            <div class="fieldElems">Number of Paths</div>
+            <div class="fieldElems">Number of Groups</div>
+        </div>
+        <!-- <div class="file-log">
+            <a href="rects.svg" download><img src="rects.svg" id="elem2" class="fieldElems"></a>
+            <a class="fieldElems" href="rects.svg" download>rects.svg</a>
+            <div class="fieldElems">1KB</div>
+            <div class="fieldElems">1</div>
+            <div class="fieldElems">5</div>
+            <div class="fieldElems">2</div>
+            <div class="fieldElems">3</div>
+        </div> -->
+    </div>
+    <hr>
+    
+    <h3>SVG View</h3>
+    <div class="file-log" id="view-panel">
+        <label>Select Image</label>
+        <select id="image" name="Image">
+            <option value="australia">rects.svg</option>
+            <option value="canada">quad01.svg</option>
+            <option value="usa">Emoji_poo.svg</option>
+        </select>
+        <img id="log2img" src="rects.svg">
+        <div class="view-elems">
+            <br><label class="labels">Title:</label>
+            <input type="text" class="form-control" id="entryBox" value="Value" placeholder="Enter Title">
+        </div>
+        <div id="desc" class="view-elems">
+            <label class="labels">Description:</label>
+            <input type="text" class="form-control" id="entryBox" value="Value" placeholder="Enter Description">
+        </div>
+        <br>
+        <div class="file-log" id="inside-table">
+            <div class="fields">
+                <div class="view2" id="comp">Component</div>
+                <div class="view2" id="summ">Summary</div>
+                <div class="view2">Other Attributes</div>
+            </div>
+            <div class="file-log">
+                <div class="view-content">Path 1</div>
+                <div class="view-content">path data = M200,300 L400,50 L600,300 L800,550 L1000,300</div>
+                <div class="view-content">3</div>
+            </div>
+            <div class="file-log">
+                <div class="view-content">Group 1</div>
+                <div class="view-content">2 child elements</div>
+                <div class="view-content">2</div>
+            </div>
+        </div>
+        <div id="btns">
+            <div class="panel-buttons" id="show">
+                <input type='submit' value='Show Attributes' class="btn btn-secondary" id="btn-show">
+            </div>
+            <div class="panel-buttons" id="edit">
+                <input type='submit' value='Edit Attribute' class="btn btn-secondary" id="btn-edit">
+            </div>
+            <div class="panel-buttons" id="submit">
+                <input type='submit' value='Submit' class="btn btn-secondary" id="btn-submit">
+            </div>
+        </div>
+    </div>
+
+    <form ref='uploadForm'
+        id='uploadForm'
+    action='/upload'
+    method='post'
+    encType="multipart/form-data">
+    <div class="form-group">
+        <input type="file" name="uploadFile" class="btn btn-secondary">
+        <input type='submit' value='Upload' class="btn btn-secondary">
+    </div>
+`   </form>
+
+    <!-- Leave me at the bottom of body -->
+    <script src="/index.js"></script>
+</body>
+</html>
+
+
+
+
+
