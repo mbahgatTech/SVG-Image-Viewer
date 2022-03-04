@@ -107,4 +107,133 @@ jQuery(document).ready(function() {
         });
     });
 
+    $(document).on('click', "#btn-show", function() {
+        $('#btn-show').attr("value", "Hide Attributes");
+        $('#btn-show').attr("id", "btn-hide");
+
+        // append an attributes panel that consists of a field labels
+        $('#view-panel').append (
+            $("<div/>")
+                .addClass("file-log")
+                .attr("id", "attrs-log")
+                .append(
+                    $("<div/>")
+                        .addClass("fields")
+                        .append (
+                            $("<div/>")
+                                .addClass("view2")
+                                .attr("id", "attr-name")
+                                .text("Attribute")
+                        )
+                        .append (
+                            $("<div/>")
+                                .addClass("view2")
+                                .attr("id", "attr-value")
+                                .text("Value")
+                        )
+                )
+        )
+        
+        // loop through all the attributes and append their names and values 
+        // to their respective fields
+        let attrNames = ["Attribute 1", "Attribute 2"];
+        let attrValue = "Data Value";
+
+        for (let attrName of attrNames) {
+            $('#attrs-log')
+            .append (
+                $("<div/>")
+                .addClass("file-log")
+                .append (
+                    $("<div/>")
+                        .addClass("view-attrs")
+                        .text(attrName)
+                )
+                // append the value as a text box that can be edited with user content
+                .append (
+                    $("<div/>")
+                        .addClass("view-attrs")
+                        .attr("id", "data")
+                        .append (
+                            $("<input/>")
+                                .addClass("form-control")
+                                .attr("type", "text")
+                                .attr("id", "entry-box2")
+                                .attr("value", attrValue)
+                                .attr("placeholder", "Enter " + attrName)
+                        )
+                )
+            )
+        }
+        
+        // append buttons after all attributes have been added
+        $('#attrs-log').append (
+            $("<div/>")
+                .addClass("panel-buttons")
+                .attr("id", "add")
+                .append(
+                    $("<input/>")
+                        .addClass("btn btn-secondary")
+                        .attr("type", "submit")
+                        .attr("value", "Add Attribute")
+                        .attr("id", "btn-add")
+                )
+        )
+        .append (
+            $("<div/>")
+                .addClass("panel-buttons")
+                .attr("id", "add")
+                .append(
+                    $("<input/>")
+                        .addClass("btn btn-secondary")
+                        .attr("type", "submit")
+                        .attr("value", "Save Attributes")
+                        .attr("id", "sbmt-attr")
+                )
+        )
+        
+        console.log('Showing all attributes');
+    });
+    
+    $(document).on('click', "#btn-hide", function() {
+        $('#attrs-log').remove();
+        $('#btn-hide').attr("value", "Show Attributes");
+        $('#btn-hide').attr("id", "btn-show");
+        console.log('Hid attributes');
+    });
+
+    $(document).on('click', "#btn-add", function() {
+        let tempdiv = $("<div/>")
+                .addClass("file-log")
+                // append the name as a text box that can be edited with user content
+                .append (
+                    $("<div/>")
+                    .addClass("view-attrs")
+                    .attr("id", "data-val")
+                    .append (
+                        $("<input/>")
+                            .addClass("form-control")
+                            .attr("type", "text")
+                            .attr("id", "entry-box2")
+                            .attr("value", "Name")
+                            .attr("placeholder", "Enter Attribute")
+                    )
+                )
+                // append the value as a text box that can be edited with user content
+                .append (
+                    $("<div/>")
+                        .addClass("view-attrs")
+                        .attr("id", "data")
+                        .append (
+                            $("<input/>")
+                                .addClass("form-control")
+                                .attr("type", "text")
+                                .attr("id", "entry-box2")
+                                .attr("value", "Value")
+                                .attr("placeholder", "Enter Value")
+                        )
+                );
+        tempdiv.insertBefore($("#add"));
+        console.log("Adding Default Attribute: Success.");
+    });
 });
