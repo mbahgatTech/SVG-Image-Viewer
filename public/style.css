@@ -7,6 +7,7 @@ html {
     background-color: #FFFFFF;
     scroll-behavior: smooth;
     letter-spacing: 1px;
+    overflow: auto;
 }
 body {
     height: 100%;
@@ -127,7 +128,7 @@ select {
     width: 100%;    
 }
 
-#entryBox, #entry-box2 {
+.entryBox, .entry-box2 {
     width: 50%;
     float: right;
     margin-right: 40%;
@@ -136,7 +137,7 @@ select {
     border: 1px solid #ccc;
 }
 
-#entry-box2 {
+.entry-box2 {
     width: 100%;
     margin-right: auto;
     margin-left: auto;
@@ -149,11 +150,16 @@ select {
 
 #view-panel {
     padding: 2%;
+    width: 100%;
+    display: block;
     /* height: 1200px; */
 }
 
 #log-panel {
     padding: 2%;
+    width: 100%;
+    display: block;
+    overflow: auto;
 }
 
 .panel-buttons {
@@ -227,6 +233,8 @@ h3 {
 
 #inside-table {
     margin-top: 2%;
+    width: 100%;
+    display: block;
 }
 
 .labels {
