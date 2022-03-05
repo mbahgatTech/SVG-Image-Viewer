@@ -106,16 +106,30 @@ jQuery(document).ready(function() {
         });
     });
 
-    let attributes = [{"name":"Attribute 1", "value":"Data Value"},{"name":"Attribute 2","value":"Data Value"}];
-    $(document).on('click', "#btn-show", function() {
-        $('#btn-show').attr("value", "Hide Attributes")
-                      .attr("id", "btn-hide")
+    function addListeners(button, listenTo) {
+        // add listeners for all entry boxes (class listenTo)
+        // that turn the hide button into  a discard button when input change is made 
+        let container = document.querySelectorAll(listenTo);
+        for (let i = 0; i < container.length; i++) {
+            container[i].addEventListener('input', function() {
+                // change the hide button box to discard because the changes will be discarded
+                $(button)
+                    .attr("value", "Discard")   
+                    .css("background-color", "#A80A01");
+                console.log("Hide button changed to discard.");
+            });
+        }
+    } 
+    
 
+    let attributes = [{"name":"Attribute 1", "value":"Data Value"},{"name":"Attribute 2","value":"Data Value"}];
+    let ids = [];
+    function appendAttributes (elemId, newId, elemClass, dataClass, attrs) {
         // append an attributes panel that consists of a field labels
-        $('#view-panel').append (
+        $('#' + elemId).append (
             $("<div/>")
                 .addClass("file-log")
-                .attr("id", "attrs-log")
+                .attr("id", newId)
                 .append(
                     $("<div/>")
                         .addClass("fields")
@@ -132,18 +146,19 @@ jQuery(document).ready(function() {
                                 .text("Value")
                         )
                 )
-        )
+        );
         
         // loop through all the attributes and append their names and values 
         // to their respective fields
-        for (let attr of attributes) {
-            $('#attrs-log')
+        for (let attr of attrs) {
+            console.log(attr);
+            $('#' + newId)
             .append (
                 $("<div/>")
                 .addClass("file-log")
                 .append (
                     $("<div/>")
-                        .addClass("view-attrs no-edit-attr")
+                        .addClass(elemClass)
                         .text(attr.name)
                 )
                 // append the value as a text box that can be edited with user content
@@ -153,32 +168,52 @@ jQuery(document).ready(function() {
                         .attr("id", "data")
                         .append (
                             $("<input/>")
-                                .addClass("form-control entry-box2")
+                                .addClass(dataClass)
                                 .attr("type", "text")
                                 .attr("value", attr.value)
                                 .attr("placeholder", "Enter Value")
                         )
                 )
-            )
+            );
+            console.log($('#' + newId).children);    
         }
         
         // append buttons after all attributes have been added
-        $('#attrs-log').append (
+        $('#' + newId).append (
             $("<div/>")
-                .addClass("panel-buttons")
-                .attr("id", "add")
+                .addClass("panel-buttons add")
+                .attr("id", elemId + "-add")
                 .append(
                     $("<input/>")
-                        .addClass("btn btn-secondary")
+                        .addClass("btn btn-secondary btn-add")
                         .attr("type", "submit")
                         .attr("value", "Add Attribute")
-                        .attr("id", "btn-add")
+                        .attr("id", elemId + "-btn-add")
                 )
-        )
-        .append (
+        );
+        console.log("helloo");
+    }
+
+    $(document).on('click', "#btn-show", function() {
+        $('#btn-show').attr("value", "Hide Attributes")
+                      .attr("id", "btn-hide")
+        
+        let shapes = ["Rect1", "Rect2", "Circ1", "Circ2", "Path1"];
+        $('#view-panel').append ($('<div/>')
+                        .attr("id", "shape-log")
+                        .addClass("file-log")
+        );
+
+        for (let i of shapes) {
+            $('#shape-log').append ($('<h5/>').text(i));
+
+            // append an attributes panel that consists of a field labels
+            appendAttributes("shape-log", i, "view-attrs no-edit-attr", "form-control entry-box2", attributes);
+        }
+        $('#shape-log').append (
             $("<div/>")
                 .addClass("panel-buttons")
-                .attr("id", "add")
+                .attr("id", "save")
                 .append(
                     $("<input/>")
                         .addClass("btn btn-secondary")
@@ -186,20 +221,21 @@ jQuery(document).ready(function() {
                         .attr("value", "Save Changes")
                         .attr("id", "sbmt-attr")
                 )
-        )
+        );
+        addListeners("#btn-hide", ".entry-box2");
         
         console.log('Showing all attributes');
     });
     
     $(document).on('click', "#btn-hide", function() {
-        $('#attrs-log').remove();
+        $('#shape-log').remove();
         $('#btn-hide').attr("value", "Show Attributes")
                       .attr("id", "btn-show")
                       .css("background-color", "#9147ff");
         console.log('Hid attributes');
     });
 
-    $(document).on('click', "#btn-add", function() {
+    $(document).on('click', ".btn-add", function() {
         let tempdiv = $("<div/>")
                 .addClass("file-log")
                 // append the name as a text box that can be edited with user content
@@ -226,25 +262,13 @@ jQuery(document).ready(function() {
                                 .attr("placeholder", "Enter Value")
                         )
                 );
-        tempdiv.insertBefore($("#add"));
-        
+        tempdiv.insertBefore($(this).parent());
+        addListeners("#btn-hide", ".entry-box2");
+
         // change hide button to discard
         $('#btn-hide')
             .attr("value", "Discard")
             .css("background-color", "#A80A01");
-        
-        // add listeners for all entry boxes in attrs-log (class entry-box2)
-        // that turn the hide button into  a discard button when input change is made 
-        let container = document.querySelectorAll(".entry-box2");
-        for (let i = 0; i < container.length; i++) {
-            container[i].addEventListener('input', function() {
-                // change the hide button box to discard because the changes will be discarded
-                $('#btn-hide')
-                    .attr("value", "Discard")   
-                    .css("background-color", "#A80A01");
-                console.log("Hide button changed to discard.");
-            });
-        }
 
         console.log("Adding Default Attribute: Success.");
     });
@@ -257,6 +281,7 @@ jQuery(document).ready(function() {
         let staticAttrs = document.querySelectorAll(".no-edit-attr");
         let attr = {};
         $(".entry-box2").each( function() {
+            console.log("iter");
             // get the name of the current attribute
             if ($(this).attr('placeholder') == "Enter Attribute"){
                 attr.name = $(this)[0].value;
@@ -278,6 +303,7 @@ jQuery(document).ready(function() {
                         return;
                     }
                     attr.name = temp.text();
+                    count2++;
                 }
                 
                 // give the current attribute th value of this.
@@ -291,7 +317,6 @@ jQuery(document).ready(function() {
 
                 // update the JSON array of attributes with the new attr
                 attributes.push(attr);
-                count2++;
                 attr = {};
             }
         }); 
@@ -300,5 +325,4 @@ jQuery(document).ready(function() {
         $('#btn-hide').attr("value", "Hide Attributes")
                       .css("background-color", "#9147ff");
     });
-    
 });
