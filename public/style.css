@@ -128,7 +128,7 @@ select {
     width: 100%;    
 }
 
-.entryBox, .entry-box2 {
+.entryBox, .entry-box2, .entry-box3 {
     width: 50%;
     float: right;
     margin-right: 40%;
@@ -152,7 +152,7 @@ select {
     padding: 2%;
     width: 100%;
     display: block;
-    /* height: 1200px; */
+    max-height: 1500px;
 }
 
 #log-panel {
@@ -160,9 +160,11 @@ select {
     width: 100%;
     display: block;
     overflow: auto;
+    max-height: 1500px;
 }
 
 .panel-buttons {
+    display: flex;
     width: 33%;
     float: left;
     margin-left: auto;
@@ -181,6 +183,8 @@ h3 {
 #submit {
     margin-right: 0;
     margin-left: auto;
+    width: 50%;
+    justify-content: right;
     text-align: right;
 }
 
@@ -194,6 +198,8 @@ h3 {
 #show {
     margin-right: auto;
     margin-left: 0;
+    width: 50%;
+    justify-content: left;
 }
 
 .view2 {
@@ -204,7 +210,7 @@ h3 {
     border: #9147ff;
 }
 
-.view-content, .view-attrs {
+.view-content, .view-attrs, .view-attrs2 {
     display: block;
     float: left;
     width: 33%;
@@ -212,7 +218,7 @@ h3 {
     border: #9147ff;
 }
 
-.view-attrs {
+.view-attrs, .view-attrs2, .entry-box3 {
     width: 50%;
 }
 
@@ -220,15 +226,24 @@ h3 {
     width: 50%;
 }
 
-#btn-submit, #btn-show, #btn-add, #sbmt-attr, #btn-hide {
+#btn-submit, #btn-show, .btn-add, #sbmt-attr, #btn-hide, .shape-add {
     width: 175px;
     text-align: center;
     background-color: #9147ff;
 }
 
-#btn-submit, #sbmt-attr {
+#sbmt-attr, #btn-submit {
     background-color: #04AA6D;
-    transform: translate(215%, 0);
+}
+
+.shape-add {
+    background-color: #9147ff;
+}
+
+#div-add {
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 #inside-table {
@@ -247,14 +262,13 @@ h3 {
     transition: height 2s linear 1s;
 }
 
-#add {
-    width: 50%;
+#save {
+    width: 100%;
+    justify-content: right;
 }
 
-#btn-add {
-    transform: translate(-8%, 0);
+.add {
+    width: 100%;
+    justify-content: center;
 }
 
-#sbmt-attr {
-    transform: translate(190%, 0);
-}
