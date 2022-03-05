@@ -120,11 +120,8 @@ jQuery(document).ready(function() {
             });
         }
     } 
-    
 
-    let attributes = [{"name":"Attribute 1", "value":"Data Value"},{"name":"Attribute 2","value":"Data Value"}];
-    let ids = [];
-    function appendAttributes (elemId, newId, elemClass, dataClass, attrs) {
+    function appendAttributes (elemId, newId, elemClass, dataClass, shape) {
         // append an attributes panel that consists of a field labels
         $('#' + elemId).append (
             $("<div/>")
@@ -150,7 +147,7 @@ jQuery(document).ready(function() {
         
         // loop through all the attributes and append their names and values 
         // to their respective fields
-        for (let attr of attrs) {
+        for (let attr of shape.attributes) {
             console.log(attr);
             $('#' + newId)
             .append (
@@ -191,24 +188,48 @@ jQuery(document).ready(function() {
                         .attr("id", elemId + "-btn-add")
                 )
         );
-        console.log("helloo");
+    }
+
+    let shapes = [];
+    let arr = ["Rectangle", "Rectangle", "Circle", "Circle", "Path"];
+    let attributes = [];
+
+    for (let i = 0; i < arr.length; i++) {
+        // each shape has its own unique index and its own set of attributes
+        // type element will help  add a class for the listeners
+        let shape = {};
+        shape.type = arr[i];
+        shape.index = i;
+        
+        if (shape.type == "Path") {
+            attributes = [{"name":"Data","value":"M300 L500 R30"}, {"name":"fill","value":"black"}];
+        }
+        else if (shape.type == "Rectangle"){
+            attributes = [{"name":"x","value":"2cm"}, {"name":"y","value":"2cm"}];
+        }
+        else if (shape.type == "Circle"){
+            attributes = [{"name":"cx","value":"2cm"}, {"name":"cy","value":"2cm"}];
+        }
+
+        shape.attributes = [...attributes];
+        shapes.push(shape);
     }
 
     $(document).on('click', "#btn-show", function() {
         $('#btn-show').attr("value", "Hide Attributes")
-                      .attr("id", "btn-hide")
+                      .attr("id", "btn-hide");
         
-        let shapes = ["Rect1", "Rect2", "Circ1", "Circ2", "Path1"];
         $('#view-panel').append ($('<div/>')
                         .attr("id", "shape-log")
                         .addClass("file-log")
         );
 
-        for (let i of shapes) {
-            $('#shape-log').append ($('<h5/>').text(i));
+        for (shape of shapes) {
+            console.log(shape.type);
+            $('#shape-log').append ($('<h5/>').text(shape.type + " " + shape.index));
 
             // append an attributes panel that consists of a field labels
-            appendAttributes("shape-log", i, "view-attrs no-edit-attr", "form-control entry-box2", attributes);
+            appendAttributes("shape-log", `${shape.type}${shape.index}`, "view-attrs no-edit-attr", "form-control entry-box2", shape);
         }
         $('#shape-log').append (
             $("<div/>")
@@ -274,55 +295,72 @@ jQuery(document).ready(function() {
     });
     
     $(document).on('click', "#sbmt-attr", function() {
-        attributes = [];
-        
         // loop through all the  attributes and add them to a JSON string
         let count2 = 0;
         let staticAttrs = document.querySelectorAll(".no-edit-attr");
         let attr = {};
-        $(".entry-box2").each( function() {
-            console.log("iter");
-            // get the name of the current attribute
-            if ($(this).attr('placeholder') == "Enter Attribute"){
-                attr.name = $(this)[0].value;
-            }
-            // get the value of the current attribute
-            else if ($(this).attr('placeholder') == "Enter Value") {
-                if (!attr.name) {
-                    // get the name of the uneditable attribute at index count2
-                    let temp = staticAttrs.item(count2);
-                    if (!temp) {
-                        console.log("Failed to save the attributes due to undefined names.");
+        let shape = {};
+        for (shape of shapes) {
+            shape.attributes = [];
+            $(".entry-box2").each( function() {
+                // check which shape has the button field belongs too
+                console.log($(this).parent().parent().parent().attr("id"));
+                if (!($(this).parent().parent().parent().attr("id") == (shape.type + shape.index))) {
+                    return;
+                }
+    
+                // get the name of the current attribute
+                if ($(this).attr('placeholder') == "Enter Attribute"){
+                    attr.name = $(this)[0].value;
+                }
+                // get the value of the current attribute
+                else if ($(this).attr('placeholder') == "Enter Value") {
+                    if (!attr.name) {
+                        // get the name of the uneditable attribute at index count2
+                        let temp = staticAttrs.item(count2);
+                        if (!temp) {
+                            console.log("Failed to save the attributes due to undefined names.");
+                            alert("ERROR: Failed to save attributes!")
+                            console.log($(this)[0].value);
+                            return;
+                        }
+                        
+                        // convert html element to a html object
+                        temp = $(temp);
+                        if (!temp || !temp.text()) {
+                            return;
+                        }
+                        attr.name = temp.text();
+                        count2++;
+                    }
+                    
+                    // give the current attribute th value of this.
+                    attr.value = $(this)[0].value;
+                    if (!attr.value) {
+                        console.log("Failed to save the attributes due to undefined values.");
                         alert("ERROR: Failed to save attributes!")
                         return;
                     }
-                    
-                    // convert html element to a html object
-                    temp = $(temp);
-                    if (!temp || !temp.text()) {
-                        return;
-                    }
-                    attr.name = temp.text();
-                    count2++;
+                    console.log( JSON.stringify(attr));
+    
+                    // update the JSON array of attributes with the new attr
+                    shape.attributes.push(attr);
+                    attr = {};
                 }
-                
-                // give the current attribute th value of this.
-                attr.value = $(this)[0].value;
-                if (!attr.value) {
-                    console.log("Failed to save the attributes due to undefined values.");
-                    alert("ERROR: Failed to save attributes!")
-                    return;
-                }
-                console.log( JSON.stringify(attr));
-
-                // update the JSON array of attributes with the new attr
-                attributes.push(attr);
-                attr = {};
-            }
-        }); 
+            }); 
+        }
 
         // change the discard button to hide attributes
         $('#btn-hide').attr("value", "Hide Attributes")
                       .css("background-color", "#9147ff");
+    });
+
+    $(document).on('change', '#image', function() {
+        try {
+            $("#log2img").attr("src", $("#image option:selected").text());
+        }
+        catch (e) {
+            console.log("ERROR: Failed to display image.")
+        }
     });
 });

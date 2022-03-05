@@ -7,8 +7,21 @@ html {
     background-color: #FFFFFF;
     scroll-behavior: smooth;
     letter-spacing: 1px;
-    overflow: auto;
+    overflow: auto; 
 }
+
+@keyframes slide-in {
+    0% {
+      max-height: 25%;
+      overflow: hidden;
+    }
+
+    100% {
+        max-height: 1500px;
+        overflow: auto;
+    }
+}
+
 body {
     height: 100%;
     min-height: 100%;
@@ -68,6 +81,7 @@ select {
     padding: 1%;
     margin-bottom: 25px;
     overflow: auto;
+    animation: slide-in 2s;
 }
 
 #title1 {
