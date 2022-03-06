@@ -369,18 +369,19 @@ jQuery(document).ready(function() {
                       .css("background-color", "#9147ff");
     });
     
-    $("#shape-add-btn").click(function() {
+    $(".shape-add").click(function() {
         // make new dropboxes for the user to select the image and the type of
         // shape they want to add to the selected image
-        let tempdiv = $('\
-                    <form id="add-form" action="/add-shape-form" method="post" encType="multipart/form-data"> \
-                    <div class="new-shape"> \
-                            <label>Select Image</label> \
-                            <select id="image2" name="Image"> \
-                                <option value="rects.svg">rects.svg</option> \
-                                <option value="quad01.svg">quad01.svg</option> \
-                                <option value="Emoji_poo.svg">Emoji_poo.svg</option> \
-                            </select><br> \
+        let tempdiv = $('<form id="add-form" action="/add-shape-form" method="post" encType="multipart/form-data"></form>');
+        let tempcontent = $('<div class="new-shape"> \
+                            <div id="mySelect"> \
+                                <label>Select Image</label> \
+                                <select id="image2" name="Image"> \
+                                    <option value="rects.svg">rects.svg</option> \
+                                    <option value="quad01.svg">quad01.svg</option> \
+                                    <option value="Emoji_poo.svg">Emoji_poo.svg</option> \
+                                </select><br> \
+                            </div> \
                             <label>Select Shape</label> \
                             <select class="shape" name="shape"> \
                                 <option value="Rectangle">Rectangle</option> \
@@ -423,11 +424,27 @@ jQuery(document).ready(function() {
                                     <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-submit-shape"> \
                                 </div> \
                             </div> \
-                        </div>\
-                    </form>');
-        
+                        </div>');
+            
         // input is wrapped in a form that communicates with the backend server
-        tempdiv.insertBefore($('#div-add'))
+        if ($(this).attr("id") == "shape-add-btn2") {
+            // remove the shape selector and form for the create panel
+            tempdiv = tempcontent;
+            tempdiv.addClass("create-shape-create");
+            try {
+                tempdiv.find("#mySelect").remove();
+                tempdiv.find(".rect-shape").find("#btn-submit-shape").remove();
+            }
+            catch (e) {
+                console.log(e.message);
+            }
+        }
+        else {
+            tempdiv.append(tempcontent);
+        }
+        
+        // insert the new shape panel before the button
+        tempdiv.insertBefore($(this).parent())
     });
 
     $(document).on('change', '.shape', function() {
@@ -537,6 +554,11 @@ jQuery(document).ready(function() {
             return;
         }
         
+        // remove submit button if in the create panel
+        if ($(this).parent().hasClass("create-shape-create")) {
+            tempdiv.find("#btn-submit-shape").remove();
+        }
+
         // if a shape already exists in this context (will always happen), then replace it with tempdiv
         // replaceWith tempdiv[0] is used because tempdiv is a jquery object that we want to replace
         // am html element, first index element in a jquery object is html element

@@ -323,3 +323,21 @@ h3 {
 #image3 {
     margin-top: 2%;
 }
+
+#div-add-create {
+    width: 50%;
+    display: flex;
+    justify-content: left;
+}
+
+.create-shape-create {
+    margin-top: 3%;
+}
+
+.uploads {
+    background-color: #9147ff;
+}
+
+#uploadForm {
+    margin-top: 12%;
+}

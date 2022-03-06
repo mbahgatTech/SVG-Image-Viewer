@@ -95,16 +95,38 @@
         </div>
     </div>
 
-    <form ref='uploadForm'
-        id='uploadForm'
-        action='/upload'
-        method='post'
-        encType="multipart/form-data">
-    <div class="form-group">
-        <input type="file" name="uploadFile" class="btn btn-secondary">
-        <input type='submit' value='Upload' class="btn btn-secondary">
+    <hr>
+    <h3>Create SVG</h3>
+    <div class="file-log" id="create-panel">
+        <form id="create-svg-form" action='/create' method='post' encType="multipart/form-data">
+            <div class="view-elems">
+                <br><label class="labels">Title:</label>
+                <input type="text" class="form-control entryBox" value="Value" placeholder="Enter Title">
+            </div>
+            <div id="desc" class="view-elems">
+                <label class="labels">Description:</label>
+                <input type="text" class="form-control entryBox" value="Value" placeholder="Enter Description">
+            </div>
+            <div class="panel-buttons" id="div-add-create">
+                <button type='button' id="shape-add-btn2" class="btn btn-secondary shape-add">Add Shape</button>
+            </div>
+            <div class="panel-buttons" id="submit">
+                <input type='submit' value='Create SVG' class="btn btn-secondary" id="btn-submit">
+            </div>
+        </form>
+        
+        <form ref='uploadForm'
+            id='uploadForm'
+            action='/upload'
+            method='post'
+            encType="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="uploadFile" class="btn btn-secondary uploads">
+            <input type='submit' value='Upload' class="btn btn-secondary uploads">
+        </div>
+       </form>
     </div>
-   </form>
+
 
     <!-- Leave me at the bottom of body -->
     <script src="/index.js"></script>
