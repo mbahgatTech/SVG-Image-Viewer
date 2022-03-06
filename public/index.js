@@ -28,6 +28,20 @@ jQuery(document).ready(function() {
     });
 
     // append all the files in /uploads to file log
+    let files = [];
+    $.ajax ({
+        type: 'get',
+        dataType: 'file',
+        url: '/upload/:name',
+        data: {"name":"quad01.svg"},
+        success: function(data) {
+            console.log(data);
+        },
+        fail: function(error) {
+            console.log(error);
+            alert("Failed to fetch SVG images from the server.");
+        } 
+    });
 
     // initialize the information of the current file
     // that will fill our table
@@ -356,16 +370,63 @@ jQuery(document).ready(function() {
     });
     
     $("#shape-add-btn").click(function() {
-        // make a new dropbox for the user to select the shape they want to add
-        // to the selected image
-        let tempdiv = $('<div class="new-shape"> \
-                        <label>Select Shape</label> \
-                        <select class="shape" name="shape"> \
-                            <option value="none">Choose Shape</option> \
-                            <option value="Rectangle">Rectangle</option> \
-                            <option value="Circle">Circle</option> \
-                            <option value="Path">Path</option> \
-                        </select></div>');
+        // make new dropboxes for the user to select the image and the type of
+        // shape they want to add to the selected image
+        let tempdiv = $('\
+                    <form id="add-form" action="/add-shape-form" method="post" encType="multipart/form-data"> \
+                    <div class="new-shape"> \
+                            <label>Select Image</label> \
+                            <select id="image2" name="Image"> \
+                                <option value="rects.svg">rects.svg</option> \
+                                <option value="quad01.svg">quad01.svg</option> \
+                                <option value="Emoji_poo.svg">Emoji_poo.svg</option> \
+                            </select><br> \
+                            <label>Select Shape</label> \
+                            <select class="shape" name="shape"> \
+                                <option value="Rectangle">Rectangle</option> \
+                                <option value="Circle">Circle</option> \
+                                <option value="Path">Path</option> \
+                            </select>\
+                            <div class="file-log rect-shape"> \
+                                <div class="fields"> \
+                                    <div class="view3" id="attr-name">Attribute</div> \
+                                    <div class="view3" id="attr-value">Value</div> \
+                                </div> \
+                                <div class="file-log">\
+                                    <div class="view-attrs2 no-edit-attr-shapes">x</div>\
+                                    <div class="view-attrs2"> \
+                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
+                                    </div> \
+                                </div> \
+                                <div class="file-log"> \
+                                    <div class="view-attrs2 no-edit-attr-shapes">y</div> \
+                                    <div class="view-attrs2"> \
+                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
+                                    </div> \
+                                </div> \
+                                <div class="file-log"> \
+                                    <div class="view-attrs2 no-edit-attr-shapes">Width</div> \
+                                    <div class="view-attrs2"> \
+                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
+                                    </div> \
+                                </div> \
+                                <div class="file-log"> \
+                                    <div class="view-attrs2 no-edit-attr-shapes">Height</div> \
+                                    <div class="view-attrs2"> \
+                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
+                                    </div> \
+                                </div>\
+                                <div class="panel-buttons" id="shape-del"> \
+                                    <button type="button" class="btn btn-secondary btn-del-shape">Delete Shape</button> \
+                                </div> \
+                                <div class="panel-buttons" id="submit-shape-add"> \
+                                    <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-submit-shape"> \
+                                </div> \
+                            </div> \
+                        </div>\
+                    </form>');
+        
+        // input is wrapped in a form that communicates with the backend server
         tempdiv.insertBefore($('#div-add'))
     });
 
@@ -375,14 +436,18 @@ jQuery(document).ready(function() {
         // for each shape add it's own fields
         if ($(this).val() == "Rectangle") {
             tempdiv = $('<div class="file-log rect-shape"> \
+                            <div class="fields"> \
+                                <div class="view3" id="attr-name">Attribute</div> \
+                                <div class="view3" id="attr-value">Value</div> \
+                            </div> \
                             <div class="file-log">\
-                                <div class="view-attrs2 no-edit-attr-shapes">X:</div>\
+                                <div class="view-attrs2 no-edit-attr-shapes">x</div>\
                                 <div class="view-attrs2"> \
                                     <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
-                                <div class="view-attrs2 no-edit-attr-shapes">Y:</div> \
+                                <div class="view-attrs2 no-edit-attr-shapes">y</div> \
                                 <div class="view-attrs2"> \
                                     <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
                                 </div> \
@@ -399,14 +464,21 @@ jQuery(document).ready(function() {
                                     <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
                                 </div> \
                             </div>\
+                            <div class="panel-buttons" id="shape-del"> \
+                                <button type="button" class="btn btn-secondary btn-del-shape">Delete Shape</button> \
+                            </div> \
                             <div class="panel-buttons" id="submit-shape-add"> \
-                                <input type="submit" value="Submit" class="btn btn-secondary" id="btn-submit-shape"> \
+                                <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-submit-shape"> \
                             </div> \
                         </div>');
         }
 
         else if ($(this).val() == "Circle") {
             tempdiv = $('<div class="file-log circle-shape"> \
+                            <div class="fields"> \
+                                <div class="view3" id="attr-name">Attribute</div> \
+                                <div class="view3" id="attr-value">Value</div> \
+                            </div> \
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">cx</div>\
                                 <div class="view-attrs2"> \
@@ -425,22 +497,32 @@ jQuery(document).ready(function() {
                                     <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter r"> \
                                 </div> \
                             </div> \
+                            <div class="panel-buttons" id="shape-del"> \
+                                <button type="button" class="btn btn-secondary btn-del-shape">Delete Shape</button> \
+                            </div> \
                             <div class="panel-buttons" id="submit-shape-add"> \
-                                <input type="submit" value="Submit" class="btn btn-secondary" id="btn-submit-shape"> \
+                                <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-submit-shape"> \
                             </div> \
                         </div>');
         }
 
         else if ($(this).val() == "Path") {
             tempdiv = $('<div class="file-log path-shape"> \
+                            <div class="fields"> \
+                                <div class="view3" id="attr-name">Attribute</div> \
+                                <div class="view3" id="attr-value">Value</div> \
+                            </div> \
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">Path Data</div>\
                                 <div class="view-attrs2"> \
                                     <input type="text" class="form-control entry-box3" value="M200,300 L400,50 L600,300 L800,550 L1000,300" placeholder="Enter Data"> \
                                 </div> \
                             </div> \
+                            <div class="panel-buttons" id="shape-del"> \
+                                <button type="button" class="btn btn-secondary btn-del-shape">Delete Shape</button> \
+                            </div> \
                             <div class="panel-buttons" id="submit-shape-add"> \
-                                <input type="submit" value="Submit" class="btn btn-secondary" id="btn-submit-shape"> \
+                                <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-submit-shape"> \
                             </div> \
                         </div>');
         }
@@ -480,5 +562,78 @@ jQuery(document).ready(function() {
         catch (e) {
             console.log("ERROR: Failed to display image.")
         }
+    });
+
+    $(document).on('click', '.btn-del-shape', function () {
+        try {
+            let tempdiv = $(this).parent();
+
+            // assign the shape that occupies this button to tempdiv
+            while (!tempdiv.hasClass("new-shape")) {
+                tempdiv = tempdiv.parent();
+            }
+
+            tempdiv.remove();
+        }
+        catch (e) {
+            console.log("ERROR: Couldn't delete shape; " + e.message);
+            alert("Failed to remove shape due to an undefined shape panel.");
+        }
+    });
+
+    $(document).on('click', '#scale-btn', function () {
+        try {
+            // make a dropdown list for the image that will be scaled and input
+            // text boxes for the scale factor
+            let tempdiv = $('\
+            <form id="scale-form" action="/scale-shape-form" method="post" encType="multipart/form-data"> \
+                    <div class="scale-shape-class"> \
+                        <label>Select Image</label> \
+                        <select id="image3" name="Image"> \
+                            <option value="rects.svg">rects.svg</option> \
+                            <option value="quad01.svg">quad01.svg</option> \
+                            <option value="Emoji_poo.svg">Emoji_poo.svg</option> \
+                        </select>\
+                        <div class="file-log"> \
+                            <div class="fields"> \
+                                <div class="view3" id="attr-name">Type</div> \
+                                <div class="view3" id="attr-value">Scale Factor</div> \
+                            </div> \
+                            <div class="file-log">\
+                                <div class="view-attrs2 no-edit-attr-shapes">Rectangle</div>\
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
+                                </div> \
+                            </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">y</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
+                                </div> \
+                            </div> \
+                            <div class="panel-buttons" id="submit-shape-scale"> \
+                                <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-scale-shape"> \
+                            </div> \
+                        </div> \
+                    </div>\
+                </form>');
+            
+            // add the scale div to the edit log section
+            $('#edit-panel').append(tempdiv);
+            $('#scale-btn').css("background-color", "#A80A01");
+            $('#scale-btn').text("Discard Scaling");
+            $('#scale-btn').attr("id", "scale-hide"); 
+        }
+        catch (e) {
+            console.log(e.message);
+            alert("Failed to display the shape scaling panel.");
+        }
+    });
+
+    $(document).on('click', '#scale-hide', function () {
+        $('#scale-form').remove();
+        $('#scale-hide').css("background-color", "#9147ff");
+        $('#scale-hide').text("Scale Shapes");
+        $('#scale-hide').attr("id", "scale-btn");
     });
 });

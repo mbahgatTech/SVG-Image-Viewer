@@ -142,7 +142,7 @@ select {
     width: 100%;    
 }
 
-.entryBox, .entry-box2, .entry-box3 {
+.entryBox, .entry-box2, .entry-box3, .entry-box4 {
     width: 50%;
     float: right;
     margin-right: 40%;
@@ -151,7 +151,7 @@ select {
     border: 1px solid #ccc;
 }
 
-.entry-box2, .entry-box3 {
+.entry-box2, .entry-box3, .entry-box4 {
     width: 100%;
     margin-right: auto;
     margin-left: auto;
@@ -216,7 +216,7 @@ h3 {
     justify-content: left;
 }
 
-.view2 {
+.view2, .view3 {
     display: block;
     float: left;
     width: 33%;
@@ -240,22 +240,40 @@ h3 {
     width: 50%;
 }
 
-#btn-submit, #btn-submit-shape, #btn-show, .btn-add, #sbmt-attr, #btn-hide, .shape-add {
+#btn-submit, #btn-submit-shape, #btn-show, .btn-add, #sbmt-attr,
+#btn-hide, .shape-add, .btn-del-shape, #btn-scale-shape {
     width: 175px;
     text-align: center;
     background-color: #9147ff;
 }
 
-#sbmt-attr, #btn-submit, #btn-submit-shape{
+#sbmt-attr, #btn-submit, #btn-submit-shape, #btn-scale-shape{
     background-color: #04AA6D;
 }
 
-#submit-shape-add {
+.btn-del-shape {
+    background-color: #A80A01;
+}
+
+#submit-shape-add, #shape-del {
+    display: flex;
+    width: 50%;
+}
+
+#submit-shape-scale {
     display: flex;
     width: 100%;
     justify-content: center;
 }
 
+#submit-shape-add {
+    justify-content: right;
+}
+
+#shape-del {
+    justify-content: left;
+}
+ 
 .shape-add {
     background-color: #9147ff;
 }
@@ -296,6 +314,12 @@ h3 {
     justify-content: center;
 }
 
+#image2, .shape {
+    margin-bottom: 3%;
+}
 #image2 {
-    margin-bottom: 5%;
+    margin-top: 2%;
+}
+#image3 {
+    margin-top: 2%;
 }
