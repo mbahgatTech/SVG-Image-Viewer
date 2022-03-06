@@ -354,8 +354,126 @@ jQuery(document).ready(function() {
         $('#btn-hide').attr("value", "Hide Attributes")
                       .css("background-color", "#9147ff");
     });
+    
+    $("#shape-add-btn").click(function() {
+        // make a new dropbox for the user to select the shape they want to add
+        // to the selected image
+        let tempdiv = $('<div class="new-shape"> \
+                        <label>Select Shape</label> \
+                        <select class="shape" name="shape"> \
+                            <option value="none">Choose Shape</option> \
+                            <option value="Rectangle">Rectangle</option> \
+                            <option value="Circle">Circle</option> \
+                            <option value="Path">Path</option> \
+                        </select></div>');
+        tempdiv.insertBefore($('#div-add'))
+    });
+
+    $(document).on('change', '.shape', function() {
+        let tempdiv = undefined;
+        
+        // for each shape add it's own fields
+        if ($(this).val() == "Rectangle") {
+            tempdiv = $('<div class="file-log rect-shape"> \
+                            <div class="file-log">\
+                                <div class="view-attrs2 no-edit-attr-shapes">X:</div>\
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
+                                </div> \
+                            </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">Y:</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
+                                </div> \
+                            </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">Width:</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
+                                </div> \
+                            </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">Height:</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
+                                </div> \
+                            </div>\
+                            <div class="panel-buttons" id="submit-shape-add"> \
+                                <input type="submit" value="Submit" class="btn btn-secondary" id="btn-submit-shape"> \
+                            </div> \
+                        </div>');
+        }
+
+        else if ($(this).val() == "Circle") {
+            tempdiv = $('<div class="file-log circle-shape"> \
+                            <div class="file-log">\
+                                <div class="view-attrs2 no-edit-attr-shapes">cx</div>\
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter cx"> \
+                                </div> \
+                            </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">cy</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter cy"> \
+                                </div> \
+                            </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">r</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter r"> \
+                                </div> \
+                            </div> \
+                            <div class="panel-buttons" id="submit-shape-add"> \
+                                <input type="submit" value="Submit" class="btn btn-secondary" id="btn-submit-shape"> \
+                            </div> \
+                        </div>');
+        }
+
+        else if ($(this).val() == "Path") {
+            tempdiv = $('<div class="file-log path-shape"> \
+                            <div class="file-log">\
+                                <div class="view-attrs2 no-edit-attr-shapes">Path Data</div>\
+                                <div class="view-attrs2"> \
+                                    <input type="text" class="form-control entry-box3" value="M200,300 L400,50 L600,300 L800,550 L1000,300" placeholder="Enter Data"> \
+                                </div> \
+                            </div> \
+                            <div class="panel-buttons" id="submit-shape-add"> \
+                                <input type="submit" value="Submit" class="btn btn-secondary" id="btn-submit-shape"> \
+                            </div> \
+                        </div>');
+        }
+        else if ($(this).val() == "none") {
+            console.log("Shape switched to none choice.");
+            return;
+        }
+
+        if (!tempdiv) {
+            console.log("ERROR: Failed to add a shape to the selected image due to undefined JQuery Object.");
+            alert("Failed to add a shape to the selected image.")
+            return;
+        }
+        
+        // if a shape already exists in this context (will always happen), then replace it with tempdiv
+        // replaceWith tempdiv[0] is used because tempdiv is a jquery object that we want to replace
+        // am html element, first index element in a jquery object is html element
+        if ($(this).parent()[0].querySelector(".rect-shape")) {
+            $(this).parent()[0].querySelector(".rect-shape").replaceWith(tempdiv[0]);
+        }
+        else if ($(this).parent()[0].querySelector(".circle-shape")) {
+            $(this).parent()[0].querySelector(".circle-shape").replaceWith(tempdiv[0]);
+        }
+        else if ($(this).parent()[0].querySelector(".path-shape")){
+            $(this).parent()[0].querySelector(".path-shape").replaceWith(tempdiv[0]);
+        }
+        else {
+            $(this).parent().append(tempdiv);
+        }
+    });
 
     $(document).on('change', '#image', function() {
+        // change the image displayed based on the selected file
         try {
             $("#log2img").attr("src", $("#image option:selected").text());
         }

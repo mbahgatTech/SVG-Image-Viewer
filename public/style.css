@@ -7,7 +7,7 @@ html {
     background-color: #FFFFFF;
     scroll-behavior: smooth;
     letter-spacing: 1px;
-    overflow: auto; 
+    overflow: auto;
 }
 
 @keyframes slide-in {
@@ -151,7 +151,7 @@ select {
     border: 1px solid #ccc;
 }
 
-.entry-box2 {
+.entry-box2, .entry-box3 {
     width: 100%;
     margin-right: auto;
     margin-left: auto;
@@ -232,7 +232,7 @@ h3 {
     border: #9147ff;
 }
 
-.view-attrs, .view-attrs2, .entry-box3 {
+.view-attrs, .view-attrs2 {
     width: 50%;
 }
 
@@ -240,24 +240,34 @@ h3 {
     width: 50%;
 }
 
-#btn-submit, #btn-show, .btn-add, #sbmt-attr, #btn-hide, .shape-add {
+#btn-submit, #btn-submit-shape, #btn-show, .btn-add, #sbmt-attr, #btn-hide, .shape-add {
     width: 175px;
     text-align: center;
     background-color: #9147ff;
 }
 
-#sbmt-attr, #btn-submit {
+#sbmt-attr, #btn-submit, #btn-submit-shape{
     background-color: #04AA6D;
+}
+
+#submit-shape-add {
+    display: flex;
+    width: 100%;
+    justify-content: center;
 }
 
 .shape-add {
     background-color: #9147ff;
 }
 
-#div-add {
-    width: 100%;
+#div-add, #div-scale {
+    width: 50%;
     display: flex;
-    justify-content: center;
+    justify-content: left;
+}
+
+#div-scale {
+    justify-content: right;
 }
 
 #inside-table {
@@ -286,3 +296,6 @@ h3 {
     justify-content: center;
 }
 
+#image2 {
+    margin-bottom: 5%;
+}
