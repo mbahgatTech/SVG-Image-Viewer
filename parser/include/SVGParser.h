@@ -415,4 +415,7 @@ void deletePath(void* data);
 char* pathToString(void* data);
 int comparePaths(const void *first, const void *second);
 
+/* ************ List of wrapper functions for the node.js backend - Only string communication between js and c ****** */
+char *fileToJSON(char *file);
+
 #endif

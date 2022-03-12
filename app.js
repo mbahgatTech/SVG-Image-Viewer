@@ -71,15 +71,50 @@ app.get('/uploads/:name', function(req , res){
 
 //******************** Your code goes here ******************** 
 
-//Sample endpoint
-app.get('/endpoint1', function(req , res){
-  let retStr = req.query.data1 + " " + req.query.data2;
- 
-  res.send(
-    {
-      somethingElse: retStr
+// an end point that sends all the files in uploads as JSON objects 
+// containing all the image information and the 
+app.get('/get-files', function(req , res){
+  let fileObjs = [];
+  let dirPath = path.join(__dirname, 'uploads');
+  fs.readdir(dirPath, (err, files) => {
+    // respond with code 500 if error is encountered reading the dir
+    if (err) {
+      return res.status(500).send(err);
     }
-  );
+    
+    // declare the file to json function call from the c parser
+    let fileData = ffi.Library('./libsvgparser', {
+      'fileToJSON': ['string', ['string']]
+    });
+
+    // append all the file information about
+    files.forEach(function (file) {
+      if (!file || path.extname(file) != '.svg') {
+        return;
+      }
+
+      let currFile = {"name":"","size":""};
+      currFile.name = file;
+
+      // add the file size to the list
+      let stats = fs.statSync(__dirname + '/uploads/' + file);
+      currFile.size = stats.size + "KB";
+
+      // get the svg file properties from the c API
+      let otherData = fileData.fileToJSON("uploads/" + file);
+      otherData = JSON.parse(otherData);
+      currFile.rects = otherData.numRect;
+      currFile.circs = otherData.numCirc;
+      currFile.paths = otherData.numPaths;
+      currFile.groups = otherData.numGroups;
+
+      fileObjs.push(currFile);
+    });
+    
+    // respond with the list of JSON objects containing file names and sizes
+    res.status(200).send(fileObjs);
+  });
+  
 });
 
 app.listen(portNum);

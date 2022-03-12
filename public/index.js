@@ -1,24 +1,15 @@
 // Put all onload AJAX calls here, and event listeners
-jQuery(document).ready(function() {
-    // On page-load AJAX Example
-    jQuery.ajax({
+$(document).ready(function() {
+    // append all the files in /uploads to file log
+    let files = [];
+    $.ajax({
         type: 'get',            //Request type
         dataType: 'json',       //Data type - we will use JSON for almost everything 
-        url: '/endpoint1',   //The server endpoint we are connecting to
-        data: {
-            data1: "Value 1",
-            data2:1234.56
-        },
+        url: '/get-files',   //The server endpoint we are connecting to
         success: function (data) {
-            /*  Do something with returned object
-                Note that what we get is an object, not a string, 
-                so we do not need to parse it on the server.
-                JavaScript really does handle JSONs seamlessly
-            */
-            jQuery('#blah').html("On page load, received string '"+data.somethingElse+"' from server");
+            files = [...data];
             //We write the object to the console to show that the request was successful
-            console.log(data); 
-
+            // console.log(files); 
         },
         fail: function(error) {
             // Non-200 return, do something with error
@@ -27,87 +18,83 @@ jQuery(document).ready(function() {
         }
     });
 
-    // append all the files in /uploads to file log
-    let files = [];
-    $.ajax ({
-        type: 'get',
-        dataType: 'file',
-        url: '/upload/:name',
-        data: {"name":"quad01.svg"},
-        success: function(data) {
-            console.log(data);
-        },
-        fail: function(error) {
-            console.log(error);
-            alert("Failed to fetch SVG images from the server.");
-        } 
-    });
+    $(document).ajaxComplete(function (event, xhr, settings) {
+        if (settings.url != "/get-files" ) {
+            return;
+        }
 
-    // initialize the information of the current file
-    // that will fill our table
-    let names = ["quad01.svg", "rects.svg", "Emoji_poo.svg"];
-    let size = "50Kb";
-    let rects = 3;
-    let circs = 4;
-    let paths = 5;
-    let grps = 6;
-    for (let name of names) {
-        // append a new div element to the file log panel containing the new image
-        $('#log-panel').append(
-            $('<div/>')
-              .attr("id", "newDiv1")
-              .addClass("file-log")
-    
-              // append an image with elem2 id and a link download to the svg image
-              .append( 
-                  $('<a/>')
-                    .attr("href", name)
-                    .attr("download", name)
-                    .append(
-                        $('<img/>')
-                            .attr("src", name)
-                            .addClass("fieldElems")
-                            .attr("id", "elem2")
+        if (!files) {
+            $('#log-panel').html("No Files.");
+            return;
+        }
+
+        for (let file of files) {
+            // append a new div element to the file log panel containing the new image
+            $('#log-panel').append(
+                $('<div/>')
+                .attr("id", "newDiv1")
+                .addClass("file-log")
+        
+                // append an image with elem2 id and a link download to the svg image
+                .append( 
+                    $('<a/>')
+                        .attr("href", file.name)
+                        .attr("download", file.name)
+                        .append(
+                            $('<img/>')
+                                .attr("src", file.name)
+                                .addClass("fieldElems")
+                                .attr("id", "elem2")
+                        )
                     )
-                )
-    
+        
                 // append a text element with name of the svg file and a download link
                 .append(
                     $("<a/>")
                         .addClass("fieldElems")
-                        .text(name)
-                        .attr("href", name)
-                        .attr("download", name)
+                        .text(file.name)
+                        .attr("href", file.name)
+                        .attr("download", file.name)
                 )
     
                 // append a text elements with the remaining information about the image
                 .append(
                     $("<div/>")
                         .addClass("fieldElems")
-                        .text(size)
+                        .text(file.size)
                 )
                 .append(
                     $("<div/>")
                         .addClass("fieldElems")
-                        .text(rects)
+                        .text(file.rects)
                 )
                 .append(
                     $("<div/>")
                         .addClass("fieldElems")
-                        .text(circs)
+                        .text(file.circs)
                 )
                 .append(
                     $("<div/>")
                         .addClass("fieldElems")
-                        .text(paths)
+                        .text(file.paths)
                 )
                 .append(
                     $("<div/>")
                         .addClass("fieldElems")
-                        .text(grps)
+                        .text(file.groups)
                 )
-        );
-    }
+            );
+        }
+
+        $('.image-select').each(function () {
+            for (let file of files) {
+                $(this).append(
+                    $('<option/>').text(file.name)
+                );
+            }
+        });
+    });
+
 
     // Event listener form example , we can use this instead explicitly listening for events
     // No redirects if possible
@@ -376,10 +363,7 @@ jQuery(document).ready(function() {
         let tempcontent = $('<div class="new-shape"> \
                             <div id="mySelect"> \
                                 <label>Select Image</label> \
-                                <select id="image2" name="Image"> \
-                                    <option value="rects.svg">rects.svg</option> \
-                                    <option value="quad01.svg">quad01.svg</option> \
-                                    <option value="Emoji_poo.svg">Emoji_poo.svg</option> \
+                                <select id="image2" class="image-select" name="Image"> \
                                 </select><br> \
                             </div> \
                             <label>Select Shape</label> \
@@ -444,7 +428,14 @@ jQuery(document).ready(function() {
         }
         
         // insert the new shape panel before the button
-        tempdiv.insertBefore($(this).parent())
+        tempdiv.insertBefore($(this).parent());
+
+        // add the file names to the image selector
+        for (let file of files) {
+            $('#image2').append(
+                $('<option/>').text(file.name)
+            );
+        }
     });
 
     $(document).on('change', '.shape', function() {
@@ -611,10 +602,7 @@ jQuery(document).ready(function() {
             <form id="scale-form" action="/scale-shape-form" method="post" encType="multipart/form-data"> \
                     <div class="scale-shape-class"> \
                         <label>Select Image</label> \
-                        <select id="image3" name="Image"> \
-                            <option value="rects.svg">rects.svg</option> \
-                            <option value="quad01.svg">quad01.svg</option> \
-                            <option value="Emoji_poo.svg">Emoji_poo.svg</option> \
+                        <select id="image3" class="image-select" name="Image"> \
                         </select>\
                         <div class="file-log"> \
                             <div class="fields"> \
@@ -639,12 +627,19 @@ jQuery(document).ready(function() {
                         </div> \
                     </div>\
                 </form>');
-            
-            // add the scale div to the edit log section
-            $('#edit-panel').append(tempdiv);
-            $('#scale-btn').css("background-color", "#A80A01");
-            $('#scale-btn').text("Discard Scaling");
-            $('#scale-btn').attr("id", "scale-hide"); 
+                
+                // add the scale div to the edit log section
+                $('#edit-panel').append(tempdiv);
+                $('#scale-btn').css("background-color", "#A80A01");
+                $('#scale-btn').text("Discard Scaling");
+                $('#scale-btn').attr("id", "scale-hide"); 
+
+                // add the file names to the image selector
+                for (let file of files) {
+                    $('#image3').append(
+                        $('<option/>').text(file.name)
+                    );
+                }
         }
         catch (e) {
             console.log(e.message);

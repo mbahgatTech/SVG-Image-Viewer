@@ -241,7 +241,7 @@ h3 {
 }
 
 #btn-submit, #btn-submit-shape, #btn-show, .btn-add, #sbmt-attr,
-#btn-hide, .shape-add, .btn-del-shape, #btn-scale-shape {
+#btn-hide, .shape-add, .shape-scale, .btn-del-shape, #btn-scale-shape {
     width: 175px;
     text-align: center;
     background-color: #9147ff;
@@ -274,7 +274,7 @@ h3 {
     justify-content: left;
 }
  
-.shape-add {
+.shape-add, .shape-scale {
     background-color: #9147ff;
 }
 

@@ -7,6 +7,23 @@ Last Revision Date: February 18th 2022
 #include "SVGHelpers.h"
 #include "SVGParser.h"
 
+char *fileToJSON(char *file) {
+    if (file == NULL) {
+        return NULL;
+    }
+
+    SVG *new = createSVG(file);
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return NULL;
+    }
+
+    char *jsonString = SVGtoJSON(new);
+    deleteSVG(new);
+
+    return jsonString;
+}
+
 SVG* createSVG(const char* fileName) {
     LIBXML_TEST_VERSION
 
