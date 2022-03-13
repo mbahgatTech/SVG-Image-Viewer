@@ -120,7 +120,11 @@ app.get('/get-files', function(req , res){
       currFile.circList = otherData.circs;
       currFile.pathList = otherData.paths;
       currFile.groupList = otherData.groups;
-      console.log(currFile.groupList);
+      currFile.rectsAttrsList = otherData.rectsAttrsList;
+      currFile.circsAttrsList = otherData.circsAttrsList;
+      currFile.pathsAttrsList = otherData.pathsAttrsList;
+      currFile.groupsAttrsList = otherData.groupsAttrsList;
+      console.log(currFile.groupsAttrsList);
 
       // add title and desc to the JSON object
       currFile.title = fileData.getTitle("uploads/" + currFile.name);

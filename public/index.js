@@ -2,6 +2,8 @@
 $(document).ready(function() {
     // append all the files in /uploads to file log
     let files = [];
+    let shapes = [];
+    let arr = [];
     $.ajax({
         type: 'get',            //Request type
         dataType: 'json',       //Data type - we will use JSON for almost everything 
@@ -193,6 +195,118 @@ $(document).ready(function() {
         
             $("#inside-table").append(tempdiv);
         });
+
+        // push all the shape types to arr 
+        for (let i = 0; i < files[0].rects; i++) {
+            arr.push("Rectangle");
+        }
+        for (let i = 0; i < files[0].circs; i++) {
+            arr.push("Circle");
+        }
+        for (let i = 0; i < files[0].paths; i++) {
+            arr.push("Path");
+        }
+        for (let i = 0; i < files[0].paths; i++) {
+            arr.push("Group");
+        }
+
+        for (let i = 0; i < arr.length; i++) {
+            // each shape has its own unique index and its own set of attributes
+            // type element will help  add a class for the listeners
+            let shape = {};
+            shape.type = arr[i];
+            shape.index = i;
+            shape.printIndex = i;
+            
+            // based on the type of the shape, add its "required" attributes
+            // and its "other attributes" to its attributes lis member
+            if (shape.type === "Path") {
+                let index = i - files[0].rects - files[0].circs;
+                shape.printIndex = index;
+                shape.attributes = files[0].pathsAttrsList[index];
+
+                // make sure you dont return undefined lists, replace with empty list
+                // if undefined
+                if (!shape.attributes) {
+                    shape.attributes = [];
+                }
+                
+                // push data attribute to the attributes list
+                let attr = {};
+                attr.name = "data";
+                attr.value = files[0].pathList[index].d;
+
+                shape.attributes.push(attr);
+            }
+            else if (shape.type === "Rectangle"){
+                shape.attributes = files[0].rectsAttrsList[i];
+
+                // make sure you dont return undefined lists, replace with empty list
+                // if undefined
+                if (!shape.attributes) {
+                    shape.attributes = [];
+                }
+
+                let attr = {};
+                attr.name = "x";
+                attr.value = files[0].rectList[i].x;
+                shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "y";
+                attr.value = files[0].rectList[i].y;
+                shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "width";
+                attr.value = files[0].rectList[i].w;
+                shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "height";
+                attr.value = files[0].rectList[i].h;
+                shape.attributes.push(attr);
+            }
+            else if (shape.type === "Circle"){
+                let index = i - files[0].rects;
+                shape.attributes = files[0].circsAttrsList[index];
+                shape.printIndex = index;
+
+                // make sure you dont return undefined lists, replace with empty list
+                // if undefined
+                if (!shape.attributes) {
+                    shape.attributes = [];
+                }
+
+                let attr = {};
+                attr.name = "cx";
+                attr.value = files[0].circList[index].cx;
+                shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "cy";
+                attr.value = files[0].circList[index].cy;
+                shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "radius";
+                attr.value = files[0].circList[index].r;
+                shape.attributes.push(attr);
+            }
+            else if (shape.type === "Group") {
+                shape.attributes = files[0].groupsAttrsList[i - files[0].rects - files[0].circs - files[0].paths];
+                
+                // make sure you dont return undefined lists, replace with empty list
+                // if undefined
+                if (!shape.attributes) {
+                    shape.attributes = [];
+                }
+
+                shape.printIndex = i - files[0].rects - files[0].circs - files[0].paths;
+            }
+
+            shapes.push(shape);
+        }
     });
     
 
@@ -280,31 +394,6 @@ $(document).ready(function() {
         );
     }
 
-    let shapes = [];
-    let arr = ["Rectangle", "Rectangle", "Circle", "Circle", "Path"];
-    let attributes = [];
-
-    for (let i = 0; i < arr.length; i++) {
-        // each shape has its own unique index and its own set of attributes
-        // type element will help  add a class for the listeners
-        let shape = {};
-        shape.type = arr[i];
-        shape.index = i;
-        
-        if (shape.type == "Path") {
-            attributes = [{"name":"Data","value":"M300 L500 R30"}, {"name":"fill","value":"black"}];
-        }
-        else if (shape.type == "Rectangle"){
-            attributes = [{"name":"x","value":"2cm"}, {"name":"y","value":"2cm"}];
-        }
-        else if (shape.type == "Circle"){
-            attributes = [{"name":"cx","value":"2cm"}, {"name":"cy","value":"2cm"}];
-        }
-
-        shape.attributes = [...attributes];
-        shapes.push(shape);
-    }
-
     $(document).on('click', "#btn-show", function() {
         $('#btn-show').attr("value", "Hide Attributes")
                       .attr("id", "btn-hide");
@@ -316,7 +405,7 @@ $(document).ready(function() {
 
         for (shape of shapes) {
             console.log(shape.type);
-            $('#shape-log').append ($('<h5/>').text(shape.type + " " + shape.index));
+            $('#shape-log').append ($('<h5/>').text(shape.type + " " + (shape.printIndex + 1)));
 
             // append an attributes panel that consists of a field labels
             appendAttributes("shape-log", `${shape.type}${shape.index}`, "view-attrs no-edit-attr", "form-control entry-box2", shape);
@@ -394,7 +483,6 @@ $(document).ready(function() {
             shape.attributes = [];
             $(".entry-box2").each( function() {
                 // check which shape has the button field belongs too
-                console.log($(this).parent().parent().parent().attr("id"));
                 if (!($(this).parent().parent().parent().attr("id") == (shape.type + shape.index))) {
                     return;
                 }
@@ -443,6 +531,23 @@ $(document).ready(function() {
         // change the discard button to hide attributes
         $('#btn-hide').attr("value", "Hide Attributes")
                       .css("background-color", "#9147ff");
+        
+        // make a post request with all the shapes and their attributes for the selected file 
+        // $.ajax({
+        //     type: 'post',            
+        //     dataType: 'json',      
+        //     url: '/post-attrs',   
+        //     data: shapes,
+        //     success: function (data) {
+        //         files = [...data];
+        //     },
+        //     fail: function(error) {
+        //         // Non-200 return, do something with error
+        //         $('#blah').html("On page load, received error from server");
+        //         console.log(error); 
+        //     }
+        // });
+                
     });
     
     $(".shape-add").click(function() {
@@ -817,7 +922,7 @@ $(document).ready(function() {
                                 </div> \
                             </div> \
                             <div class="file-log"> \
-                                <div class="view-attrs2 no-edit-attr-shapes">y</div> \
+                                <div class="view-attrs2 no-edit-attr-shapes">Circle</div> \
                                 <div class="view-attrs2"> \
                                     <input type="text" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
                                 </div> \

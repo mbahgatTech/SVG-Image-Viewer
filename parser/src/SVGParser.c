@@ -24,28 +24,35 @@ char *fileToJSON(char *file) {
 
     List *objects = getRects(new);
     char *rectString = rectListToJSON(objects);
+    char *attrsString = shapeListToAttrsJSON(objects, RECT);
     freeList(objects);
 
     objects = getCircles(new);
     char *circString = circListToJSON(objects);
+    char *attrsString2 = shapeListToAttrsJSON(objects, CIRC);
     freeList(objects);
 
     objects = getPaths(new);
     char *pathString = pathListToJSON(objects);
+    char *attrsString3 = shapeListToAttrsJSON(objects, PATH);
     freeList(objects);
 
     objects = getGroups(new);
     char *groupString = groupListToJSON(objects);
+    char *attrsString4 = shapeListToAttrsJSON(objects, GROUP);
     freeList(objects);
 
-
     // add more fields to the JSON string, title, desc and components
-    char *finalString = malloc(sizeof(char) * (strlen(jsonString) + strlen(",\"rects\":,\"circs\":,\"paths\":,\"groups\":") 
-        + strlen(rectString) + strlen(circString) + strlen(pathString) + strlen(groupString) + 1));
+    char *finalString = malloc(sizeof(char) * (strlen(jsonString) + strlen(",\"rects\":,\"circs\":,\"paths\":,\"groups\":,\"attrs\":") 
+        + strlen(",\"rectAttrsList\":,\"circsAttrsList\":,\"pathsAttrsList\":,\"groupsAttrsList\":") + strlen(attrsString) + 
+        strlen(attrsString2) + strlen(attrsString3) + strlen(attrsString4) + strlen(rectString) + strlen(circString) + strlen(pathString) 
+        + strlen(groupString) + 1));
 
     jsonString[strlen(jsonString) - 1] = ',';        
-    sprintf(finalString, "%s\"rects\":%s,\"circs\":%s,\"paths\":%s,\"groups\":%s}", 
-        jsonString, rectString, circString, pathString, groupString);
+    sprintf(finalString, "%s\"rects\":%s,\"circs\":%s,\"paths\":%s,\"groups\":%s"
+            ",\"rectsAttrsList\":%s,\"circsAttrsList\":%s,\"pathsAttrsList\":%s,\"groupsAttrsList\":%s}", 
+        jsonString, rectString, circString, pathString, groupString, attrsString,
+        attrsString2, attrsString3, attrsString4);
     
     deleteSVG(new);
     free(jsonString);
@@ -53,8 +60,71 @@ char *fileToJSON(char *file) {
     free(circString);
     free(pathString);
     free(groupString);
+    free(attrsString);
+    free(attrsString2);
+    free(attrsString3);
+    free(attrsString4);
 
     return finalString;
+}
+
+char *shapeListToAttrsJSON (List *shapes, elementType type) {
+    if (shapes == NULL) {
+        return NULL;
+    }
+    
+    char **attrsList = NULL;
+    ListIterator iter = createIterator(shapes);
+    void *data;
+    int i = 0;
+
+    // loop through all the shapes and add each shape's attribute list
+    // to  the array of strings.
+    while((data = nextElement(&iter)) != NULL) {
+        attrsList = realloc(attrsList, sizeof(char *) * (i + 1));
+
+        if (type == RECT) {
+            attrsList[i] = attrListToJSON(((Rectangle *)data) -> otherAttributes);
+        }
+
+        if (type == CIRC) {
+            attrsList[i] = attrListToJSON(((Circle *)data) -> otherAttributes);
+        }
+
+        if (type == PATH) {
+            attrsList[i] = attrListToJSON(((Path *)data) -> otherAttributes);
+        }
+
+        if (type == GROUP) {
+            attrsList[i] = attrListToJSON(((Group *)data) -> otherAttributes);
+        }
+
+        i++;
+    }
+    
+    char *jsonString = malloc(sizeof(char) * 2);
+    strcpy (jsonString, "[");
+
+    // add the attribute lists to jsonString containing a list of JSON arrays
+    for (i = 0; i < shapes -> length; i++) {
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(attrsList[i]) + 2));
+
+        if (i > 0) {
+            strcat(jsonString, ",");
+        }
+
+        strcat(jsonString, attrsList[i]);
+
+        free(attrsList[i]);
+        attrsList[i] = NULL;
+    }
+    
+    // close the JSON list and return it
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+    free(attrsList);
+    
+    return jsonString;
 }
 
 char *getTitle (char *file) {

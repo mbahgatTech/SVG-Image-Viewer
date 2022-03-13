@@ -419,5 +419,6 @@ int comparePaths(const void *first, const void *second);
 char *fileToJSON(char *file);
 char *getTitle (char *file);
 char *getDesc (char *file);
+char *shapeListToAttrsJSON (List *shapes, elementType type);
 
 #endif
