@@ -84,7 +84,9 @@ app.get('/get-files', function(req , res){
     
     // declare the file to json function call from the c parser
     let fileData = ffi.Library('./libsvgparser', {
-      'fileToJSON': ['string', ['string']]
+      'fileToJSON': ['string', ['string']],
+      'getTitle': ['string', ['string']],
+      'getDesc': ['string', ['string']]
     });
 
     // append all the file information about
@@ -102,11 +104,27 @@ app.get('/get-files', function(req , res){
 
       // get the svg file properties from the c API
       let otherData = fileData.fileToJSON("uploads/" + file);
-      otherData = JSON.parse(otherData);
+      try {
+        otherData = JSON.parse(otherData);
+      }
+      catch (err2) {
+        return res.status(500).send(err2);
+      }
+      
+      // add the parsed data to currFile and append the JSON obj to fileObjs
       currFile.rects = otherData.numRect;
       currFile.circs = otherData.numCirc;
       currFile.paths = otherData.numPaths;
       currFile.groups = otherData.numGroups;
+      currFile.rectList = otherData.rects;
+      currFile.circList = otherData.circs;
+      currFile.pathList = otherData.paths;
+      currFile.groupList = otherData.groups;
+      console.log(currFile.groupList);
+
+      // add title and desc to the JSON object
+      currFile.title = fileData.getTitle("uploads/" + currFile.name);
+      currFile.desc = fileData.getDesc("uploads/" + currFile.name);
 
       fileObjs.push(currFile);
     });

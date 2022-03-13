@@ -417,5 +417,7 @@ int comparePaths(const void *first, const void *second);
 
 /* ************ List of wrapper functions for the node.js backend - Only string communication between js and c ****** */
 char *fileToJSON(char *file);
+char *getTitle (char *file);
+char *getDesc (char *file);
 
 #endif

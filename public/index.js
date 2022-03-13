@@ -8,8 +8,6 @@ $(document).ready(function() {
         url: '/get-files',   //The server endpoint we are connecting to
         success: function (data) {
             files = [...data];
-            //We write the object to the console to show that the request was successful
-            // console.log(files); 
         },
         fail: function(error) {
             // Non-200 return, do something with error
@@ -23,8 +21,12 @@ $(document).ready(function() {
             return;
         }
 
-        if (!files) {
-            $('#log-panel').html("No Files.");
+        if (!files || files.length < 1) {
+            $('#log-panel').append(
+                $('<h2/>')
+                    .attr("id", "no-files")
+                    .text("No Files.")
+            );
             return;
         }
 
@@ -93,19 +95,106 @@ $(document).ready(function() {
                 );
             }
         });
-    });
 
+        // display the first image in the view panel on load
+        $("#log2img")
+                .attr("src", files[0].name)
+                .attr("alt", files[0].name);
+        $("#title2").children("input").attr("value", files[0].title);
+        $("#desc").children("input").attr("value", files[0].desc);
+        
+        files[0].rectList.forEach((rect, index) => {
+            let tempdiv = $('<div class="file-log"> \
+                            </div>');
 
-    // Event listener form example , we can use this instead explicitly listening for events
-    // No redirects if possible
-    $('#someform').submit(function(e){
-        $('#blah').html("Form has data: "+$('.entryBox').val());
-        e.preventDefault();
-        //Pass data to the Ajax call, so it gets passed to the server
-        $.ajax({
-            //Create an object for connecting to another waypoint
+            tempdiv.append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Rectangle " + (index + 1))
+            )
+            .append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Upper left corner: x = " + rect.x + rect.units + ", y = " + rect.y + rect.units + 
+                    "\nWidth: " + rect.w + rect.units + ", Height: " + rect.h + rect.units)
+            )
+            .append (
+                $("<div/>")
+                    .addClass("view-content")
+                    .text(rect.numAttr)
+            );
+
+            $("#inside-table").append(tempdiv);
+        });
+        files[0].circList.forEach((circ, index) => {
+            let tempdiv = $('<div class="file-log"> \
+                            </div>');
+        
+            tempdiv.append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Circle " + (index + 1))
+            )
+            .append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Centre: x = " + circ.cx + circ.units + ", y = " + circ.cy + circ.units + 
+                    ", radius: " + circ.r + circ.units)
+            )
+            .append (
+                $("<div/>")
+                    .addClass("view-content")
+                    .text(circ.numAttr)
+            );
+        
+            $("#inside-table").append(tempdiv);
+        });
+        files[0].pathList.forEach((path, index) => {
+            let tempdiv = $('<div class="file-log"> \
+                            </div>');
+        
+            tempdiv.append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Path " + (index + 1))
+            )
+            .append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Path Data: " + path.d)
+            )
+            .append (
+                $("<div/>")
+                    .addClass("view-content")
+                    .text(path.numAttr)
+            );
+        
+            $("#inside-table").append(tempdiv);
+        });
+        files[0].groupList.forEach((group, index) => {
+            let tempdiv = $('<div class="file-log"> \
+                            </div>');
+        
+            tempdiv.append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text("Group " + (index + 1))
+            )
+            .append(
+                $("<div/>")
+                    .addClass("view-content")
+                    .text(group.children + " child elements")
+            )
+            .append (
+                $("<div/>")
+                    .addClass("view-content")
+                    .text(group.numAttr)
+            );
+        
+            $("#inside-table").append(tempdiv);
         });
     });
+    
 
     function addListeners(button, listenTo) {
         // add listeners for all entry boxes (class listenTo)
@@ -570,10 +659,122 @@ $(document).ready(function() {
     $(document).on('change', '#image', function() {
         // change the image displayed based on the selected file
         try {
-            $("#log2img").attr("src", $("#image option:selected").text());
+            let fileName = $("#image option:selected").text();
+
+            $("#log2img")
+                .attr("src", fileName)
+                .attr("alt", fileName);
+
+            $("#inside-table").children(".file-log").each(function () {
+                $(this).remove();
+            });
+            
+            // display the summary of the selected file name
+            files.forEach(file => {
+                // only process file info if the name matches the selected
+                // file name
+                if (file.name != fileName) {
+                    return;
+                }
+
+                $("#title2").children("input").attr("value", file.title);
+                $("#desc").children("input").attr("value", file.desc);
+
+                file.rectList.forEach((rect, index) => {
+                    let tempdiv = $('<div class="file-log"> \
+                                    </div>');
+                
+                    tempdiv.append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Rectangle " + (index + 1))
+                    )
+                    .append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Upper left corner: x = " + rect.x + rect.units + ", y = " + rect.y + rect.units + 
+                            "\nWidth: " + rect.w + rect.units + ", Height: " + rect.h + rect.units)
+                    )
+                    .append (
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text(rect.numAttr)
+                    );
+                
+                    $("#inside-table").append(tempdiv);
+                });
+                file.circList.forEach((circ, index) => {
+                    let tempdiv = $('<div class="file-log"> \
+                                    </div>');
+                
+                    tempdiv.append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Circle " + (index + 1))
+                    )
+                    .append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Centre: x = " + circ.cx + circ.units + ", y = " + circ.cy + circ.units + 
+                            ", radius: " + circ.r + circ.units)
+                    )
+                    .append (
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text(circ.numAttr)
+                    );
+                
+                    $("#inside-table").append(tempdiv);
+                });
+                file.pathList.forEach((path, index) => {
+                    let tempdiv = $('<div class="file-log"> \
+                                    </div>');
+                
+                    tempdiv.append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Path " + (index + 1))
+                    )
+                    .append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Path Data: " + path.d)
+                    )
+                    .append (
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text(path.numAttr)
+                    );
+                
+                    $("#inside-table").append(tempdiv);
+                });
+                file.groupList.forEach((group, index) => {
+                    let tempdiv = $('<div class="file-log"> \
+                                    </div>');
+                
+                    tempdiv.append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text("Group " + (index + 1))
+                    )
+                    .append(
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text(group.children + " child elements")
+                    )
+                    .append (
+                        $("<div/>")
+                            .addClass("view-content")
+                            .text(group.numAttr)
+                    );
+                
+                    $("#inside-table").append(tempdiv);
+                });
+            });
+
         }
         catch (e) {
-            console.log("ERROR: Failed to display image.")
+            console.log("ERROR: Failed to display image." + e.message)
         }
     });
 

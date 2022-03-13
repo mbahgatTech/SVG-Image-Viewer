@@ -11,17 +11,90 @@ char *fileToJSON(char *file) {
     if (file == NULL) {
         return NULL;
     }
-
+    
+    // create and validate and SVG struct from the given file name
     SVG *new = createSVG(file);
     if(!validateSVG(new, "svg.xsd")) {
         deleteSVG(new);
         return NULL;
     }
-
+    
+    // convert the struct to a jsonString summary
     char *jsonString = SVGtoJSON(new);
+
+    List *objects = getRects(new);
+    char *rectString = rectListToJSON(objects);
+    freeList(objects);
+
+    objects = getCircles(new);
+    char *circString = circListToJSON(objects);
+    freeList(objects);
+
+    objects = getPaths(new);
+    char *pathString = pathListToJSON(objects);
+    freeList(objects);
+
+    objects = getGroups(new);
+    char *groupString = groupListToJSON(objects);
+    freeList(objects);
+
+
+    // add more fields to the JSON string, title, desc and components
+    char *finalString = malloc(sizeof(char) * (strlen(jsonString) + strlen(",\"rects\":,\"circs\":,\"paths\":,\"groups\":") 
+        + strlen(rectString) + strlen(circString) + strlen(pathString) + strlen(groupString) + 1));
+
+    jsonString[strlen(jsonString) - 1] = ',';        
+    sprintf(finalString, "%s\"rects\":%s,\"circs\":%s,\"paths\":%s,\"groups\":%s}", 
+        jsonString, rectString, circString, pathString, groupString);
+    
+    deleteSVG(new);
+    free(jsonString);
+    free(rectString);
+    free(circString);
+    free(pathString);
+    free(groupString);
+
+    return finalString;
+}
+
+char *getTitle (char *file) {
+    if (file == NULL) {
+        return NULL;
+    }
+    
+    // create and validate and SVG struct from the given file name
+    SVG *new = createSVG(file);
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return NULL;
+    }
+    
+    // copy the title, delete the svg and return the temp string
+    char *temp = malloc(sizeof(char) * (strlen(new -> title) + 1));
+    strcpy(temp, new -> title);
     deleteSVG(new);
 
-    return jsonString;
+    return temp;
+}
+
+char *getDesc (char *file) {
+    if (file == NULL) {
+        return NULL;
+    }
+    
+    // create and validate and SVG struct from the given file name
+    SVG *new = createSVG(file);
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return NULL;
+    }
+    
+    // copy the desc, delete the svg and return the temp string
+    char *temp = malloc(sizeof(char) * (strlen(new -> description) + 1));
+    strcpy(temp, new -> description);
+    deleteSVG(new);
+
+    return temp;
 }
 
 SVG* createSVG(const char* fileName) {

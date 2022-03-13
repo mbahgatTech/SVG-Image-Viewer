@@ -34,4 +34,4 @@ $(BIN)LinkedListAPI.o: $(SRC)LinkedListAPI.c $(INC)LinkedListAPI.h
 	$(CC) $(CFLAGS) -c -fpic -I$(INC) $(SRC)LinkedListAPI.c -o $(BIN)LinkedListAPI.o
 
 clean:
-	rm -rf $(BIN)main $(BIN)*.so $(BIN)*.o  && cd .. && rm *.so
+	rm -rf $(BIN)*.so $(BIN)*.o  && cd .. && rm $(ENVIRONMENT)/*.so
