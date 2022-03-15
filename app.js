@@ -6,11 +6,13 @@ const ffi = require('ffi-napi');
 // Express App (Routes)
 const express = require("express");
 const app     = express();
+const bodyParser = require('body-parser');
 const path    = require("path");
 const fileUpload = require('express-fileupload');
 
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname+'/uploads')));
+app.use(bodyParser.json());
 
 // Minimization
 const fs = require('fs');
@@ -104,6 +106,11 @@ app.get('/get-files', function(req , res){
 
       // get the svg file properties from the c API
       let otherData = fileData.fileToJSON("uploads/" + file);
+      if (!otherData) {
+        fs.unlinkSync("uploads/" + file);
+        return;
+      }
+
       try {
         otherData = JSON.parse(otherData);
       }
@@ -124,11 +131,10 @@ app.get('/get-files', function(req , res){
       currFile.circsAttrsList = otherData.circsAttrsList;
       currFile.pathsAttrsList = otherData.pathsAttrsList;
       currFile.groupsAttrsList = otherData.groupsAttrsList;
-      console.log(currFile.groupsAttrsList);
 
       // add title and desc to the JSON object
       currFile.title = fileData.getTitle("uploads/" + currFile.name);
-      currFile.desc = fileData.getDesc("uploads/" + currFile.name);
+      currFile.descr = fileData.getDesc("uploads/" + currFile.name);
 
       fileObjs.push(currFile);
     });
@@ -137,6 +143,84 @@ app.get('/get-files', function(req , res){
     res.status(200).send(fileObjs);
   });
   
+});
+
+
+app.post('/post-attrs', function (req, res) {
+  let file = req.body.file;
+
+  console.log(file.title + file.descr);
+  
+  // initialize an ffi library to call the svg parser shared lib
+  let fileData = ffi.Library('./libsvgparser', {
+    'createShape':['bool', ['string', 'string', 'string']],
+    'JSONtoSVGFile':['bool', ['string', 'string']],
+    'appendAttributeToFile':['bool', ['string', 'string', 'int', 'string']]
+  });
+
+  try {
+    let fileCreate = fileData.JSONtoSVGFile(JSON.stringify(file), "uploads/" + req.body.file.name);
+    if (!fileCreate) {
+      res.status(400).send('Invalid input.');
+    }
+    file = req.body.file;
+
+    // call create shape on each rectangle object and add them to the file
+    file.rectList.forEach( (rect, index) => {
+      // add rectangle to the file and check the response for errors
+      let response = fileData.createShape("RECT", JSON.stringify(rect), "uploads/" + file.name);
+      if (!response) {
+        res.status(400).send('Invalid input.');
+      }
+      
+      // add the attributes to the current rect and 
+      file.rectsAttrsList[index].forEach((attrs) => {
+        response = fileData.appendAttributeToFile("RECT", JSON.stringify(attrs), index, file.name);
+        if(!response) {
+          res.status(400).send('Invalid input.');
+        }
+      });
+    });
+
+    // create all circles and add them to the svg file
+    file.circList.forEach((circ, index) => {
+      let response = fileData.createShape("CIRC", JSON.stringify(circ), "uploads/" + file.name);
+      if (!response) {
+        res.status(400).send('Invalid input.');
+      }
+
+      // add the attributes to the current circ and 
+      file.circsAttrsList[index].forEach((attrs) => {
+        response = fileData.appendAttributeToFile("CIRC", JSON.stringify(attrs), index, "uploads/" + file.name);
+        if(!response) {
+          res.status(400).send('Invalid input.');
+        }
+      });
+    });
+
+    // create all paths and add them to the svg file
+    file.pathList.forEach((path, index) => {
+      let response = fileData.createShape("PATH", JSON.stringify(path), "uploads/" + file.name);
+      if (!response) {
+        res.status(400).send('Invalid input.');
+      }
+
+      // add the attributes to the current circ and 
+      file.pathsAttrsList[index].forEach((attrs) => {
+        response = fileData.appendAttributeToFile("PATH", JSON.stringify(attrs), index, "uploads/" + file.name);
+        if(!response) {
+          res.status(400).send('Invalid input.');
+        }
+      });
+    });
+  }
+  catch (errr) {
+    console.log(errr.message);
+    res.status(500).send(errr.message);
+  }
+  
+  res.send('');
+  // res.redirect('/');
 });
 
 app.listen(portNum);

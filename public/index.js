@@ -13,7 +13,7 @@ $(document).ready(function() {
         },
         fail: function(error) {
             // Non-200 return, do something with error
-            $('#blah').html("On page load, received error from server");
+            alert('Failed to load images from the server.');
             console.log(error); 
         }
     });
@@ -97,15 +97,21 @@ $(document).ready(function() {
                 );
             }
         });
-
-        // display the first image in the view panel on load
-        $("#log2img")
-                .attr("src", files[0].name)
-                .attr("alt", files[0].name);
-        $("#title2").children("input").attr("value", files[0].title);
-        $("#desc").children("input").attr("value", files[0].desc);
         
-        files[0].rectList.forEach((rect, index) => {
+        createSVGView(files[0]);
+    });
+    
+    function createSVGView (file) {
+        // display the first image in the view panel on load
+        shapes = [];
+        $("#log2img")
+                .attr("src", file.name)
+                .attr("alt", file.name);
+        $("#title2").children("input").attr("value", file.title);
+        $("#desc").children("input").attr("value", file.descr);
+
+        
+        file.rectList.forEach((rect, index) => {
             let tempdiv = $('<div class="file-log"> \
                             </div>');
 
@@ -128,7 +134,7 @@ $(document).ready(function() {
 
             $("#inside-table").append(tempdiv);
         });
-        files[0].circList.forEach((circ, index) => {
+        file.circList.forEach((circ, index) => {
             let tempdiv = $('<div class="file-log"> \
                             </div>');
         
@@ -151,7 +157,7 @@ $(document).ready(function() {
         
             $("#inside-table").append(tempdiv);
         });
-        files[0].pathList.forEach((path, index) => {
+        file.pathList.forEach((path, index) => {
             let tempdiv = $('<div class="file-log"> \
                             </div>');
         
@@ -173,7 +179,7 @@ $(document).ready(function() {
         
             $("#inside-table").append(tempdiv);
         });
-        files[0].groupList.forEach((group, index) => {
+        file.groupList.forEach((group, index) => {
             let tempdiv = $('<div class="file-log"> \
                             </div>');
         
@@ -195,18 +201,19 @@ $(document).ready(function() {
         
             $("#inside-table").append(tempdiv);
         });
-
+        
         // push all the shape types to arr 
-        for (let i = 0; i < files[0].rects; i++) {
+        arr = [];
+        for (let i = 0; i < file.rects; i++) {
             arr.push("Rectangle");
         }
-        for (let i = 0; i < files[0].circs; i++) {
+        for (let i = 0; i < file.circs; i++) {
             arr.push("Circle");
         }
-        for (let i = 0; i < files[0].paths; i++) {
+        for (let i = 0; i < file.paths; i++) {
             arr.push("Path");
         }
-        for (let i = 0; i < files[0].paths; i++) {
+        for (let i = 0; i < file.groups; i++) {
             arr.push("Group");
         }
 
@@ -221,9 +228,9 @@ $(document).ready(function() {
             // based on the type of the shape, add its "required" attributes
             // and its "other attributes" to its attributes lis member
             if (shape.type === "Path") {
-                let index = i - files[0].rects - files[0].circs;
+                let index = i - file.rects - file.circs;
                 shape.printIndex = index;
-                shape.attributes = files[0].pathsAttrsList[index];
+                shape.attributes = file.pathsAttrsList[index];
 
                 // make sure you dont return undefined lists, replace with empty list
                 // if undefined
@@ -234,12 +241,12 @@ $(document).ready(function() {
                 // push data attribute to the attributes list
                 let attr = {};
                 attr.name = "data";
-                attr.value = files[0].pathList[index].d;
+                attr.value = file.pathList[index].d;
 
                 shape.attributes.push(attr);
             }
             else if (shape.type === "Rectangle"){
-                shape.attributes = files[0].rectsAttrsList[i];
+                shape.attributes = [...file.rectsAttrsList[i]];
 
                 // make sure you dont return undefined lists, replace with empty list
                 // if undefined
@@ -249,27 +256,27 @@ $(document).ready(function() {
 
                 let attr = {};
                 attr.name = "x";
-                attr.value = files[0].rectList[i].x;
+                attr.value = file.rectList[i].x;
                 shape.attributes.push(attr);
 
                 attr = {};
                 attr.name = "y";
-                attr.value = files[0].rectList[i].y;
+                attr.value = file.rectList[i].y;
                 shape.attributes.push(attr);
 
                 attr = {};
                 attr.name = "width";
-                attr.value = files[0].rectList[i].w;
+                attr.value = file.rectList[i].w;
                 shape.attributes.push(attr);
 
                 attr = {};
                 attr.name = "height";
-                attr.value = files[0].rectList[i].h;
+                attr.value = file.rectList[i].h;
                 shape.attributes.push(attr);
             }
             else if (shape.type === "Circle"){
-                let index = i - files[0].rects;
-                shape.attributes = files[0].circsAttrsList[index];
+                let index = i - file.rects;
+                shape.attributes = [...file.circsAttrsList[index]];
                 shape.printIndex = index;
 
                 // make sure you dont return undefined lists, replace with empty list
@@ -280,21 +287,21 @@ $(document).ready(function() {
 
                 let attr = {};
                 attr.name = "cx";
-                attr.value = files[0].circList[index].cx;
+                attr.value = file.circList[index].cx;
                 shape.attributes.push(attr);
 
                 attr = {};
                 attr.name = "cy";
-                attr.value = files[0].circList[index].cy;
+                attr.value = file.circList[index].cy;
                 shape.attributes.push(attr);
 
                 attr = {};
                 attr.name = "radius";
-                attr.value = files[0].circList[index].r;
+                attr.value = file.circList[index].r;
                 shape.attributes.push(attr);
             }
             else if (shape.type === "Group") {
-                shape.attributes = files[0].groupsAttrsList[i - files[0].rects - files[0].circs - files[0].paths];
+                shape.attributes = [...file.groupsAttrsList[i - file.rects - file.circs - file.paths]];
                 
                 // make sure you dont return undefined lists, replace with empty list
                 // if undefined
@@ -302,13 +309,32 @@ $(document).ready(function() {
                     shape.attributes = [];
                 }
 
-                shape.printIndex = i - files[0].rects - files[0].circs - files[0].paths;
+                shape.printIndex = i - file.rects - file.circs - file.paths;
             }
 
             shapes.push(shape);
         }
-    });
-    
+    }
+
+    function getFile (mySelect) {
+        if (!mySelect) {
+            return undefined;
+        }
+        
+        // get the selected file name from the mySelect menu
+        let fileName = $(mySelect + " option:selected").text();
+
+        // loop through all the files on the server and return the file that
+        // matches fileName
+        for (let file of files) {
+            if (file.name === fileName) {
+                return file;
+            }
+        }
+        
+        // returns the first file if nothing was selected
+        return files[0];
+    }
 
     function addListeners(button, listenTo) {
         // add listeners for all entry boxes (class listenTo)
@@ -352,7 +378,6 @@ $(document).ready(function() {
         // loop through all the attributes and append their names and values 
         // to their respective fields
         for (let attr of shape.attributes) {
-            console.log(attr);
             $('#' + newId)
             .append (
                 $("<div/>")
@@ -376,7 +401,6 @@ $(document).ready(function() {
                         )
                 )
             );
-            console.log($('#' + newId).children);    
         }
         
         // append buttons after all attributes have been added
@@ -394,6 +418,65 @@ $(document).ready(function() {
         );
     }
 
+    function setShapes (file, newShapes) {
+        if (!file || !newShapes) {
+            return undefined;
+        }
+        
+        file.rectsAttrsList = [];
+        file.circsAttrsList = [];
+        file.pathsAttrsList = [];
+        file.groupsAttrsList = [];
+
+        newShapes.forEach(function (shape, index) {
+            if (shape.type === "Rectangle") {
+                // set the default attributes for the rectangle and push it to rectList
+                file.rectList[index].x = shape.attributes.filter(function(attr) { return attr.name === 'x'; })[0].value;
+                file.rectList[index].y = shape.attributes.filter(function(attr) { return attr.name === 'y'; })[0].value;
+                file.rectList[index].w = shape.attributes.filter(function(attr) { return attr.name === 'width'; })[0].value;
+                file.rectList[index].h = shape.attributes.filter(function(attr) { return attr.name === 'height'; })[0].value;
+                // file.rectList[index] = file.rectList[index].x.match(/[a-zA-z]*/g);
+
+                // push other attributes to the rects attrs list and filter out the required ones
+                file.rectsAttrsList.push([...shape.attributes]);
+                file.rectsAttrsList[index] = file.rectsAttrsList[index].filter(function (attr) { 
+                    return attr.name != 'x' && attr.name != 'y' && attr.name != 'width' && attr.name != 'height';
+                });
+                file.rectList[index].numAttr = file.rectsAttrsList[index].length;
+            }
+            else if (shape.type === "Circle") {
+                let idx = index - file.rectList.length;
+                // set the default attributes for the circle and push it to circList
+                file.circList[idx].cx = shape.attributes.filter(function(attr) { return attr.name === 'cx'; })[0].value;
+                file.circList[idx].cy = shape.attributes.filter(function(attr) { return attr.name === 'cy'; })[0].value;
+                file.circList[idx].r = shape.attributes.filter(function(attr) { return attr.name === 'radius'; })[0].value;
+
+                // push other attributes to the circs attrs list and filter out the required ones
+                file.circsAttrsList.push([...shape.attributes]);
+                file.circsAttrsList[idx] = file.circsAttrsList[idx].filter(function (attr) { 
+                    return attr.name != 'cx' && attr.name != 'cy' && attr.name != 'radius';
+                });
+                file.circList[idx].numAttr = file.circsAttrsList[idx].length;
+            }
+            else if (shape.type === "Path") {
+                // push other attributes to the paths attrs list and filter out the required ones
+                let idx = index - file.rectList.length - file.circList.length;
+                file.pathList[idx].d = shape.attributes.filter(function(attr) { return attr.name === 'data'; })[0].value;
+
+                file.pathsAttrsList.push([...shape.attributes]);
+                file.pathsAttrsList[idx] = file.pathsAttrsList[idx].filter(function (attr) { return attr.name != 'data'; });
+                console.log(file.pathsAttrsList[idx]);
+                file.pathList[idx].numAttr = file.pathsAttrsList[idx].length; 
+            }
+            else if (shape.type === "Group") {
+                let idx = index - file.rectList.length - file.circList.length - file.pathList.length;
+                // copy the shape attributes 
+                file.groupsAttrsList.push([...shape.attributes]);
+                file.groupList[idx].numAttr = file.groupsAttrsList[idx].length;
+            }
+        });
+    }
+
     $(document).on('click', "#btn-show", function() {
         $('#btn-show').attr("value", "Hide Attributes")
                       .attr("id", "btn-hide");
@@ -404,26 +487,13 @@ $(document).ready(function() {
         );
 
         for (shape of shapes) {
-            console.log(shape.type);
             $('#shape-log').append ($('<h5/>').text(shape.type + " " + (shape.printIndex + 1)));
 
             // append an attributes panel that consists of a field labels
             appendAttributes("shape-log", `${shape.type}${shape.index}`, "view-attrs no-edit-attr", "form-control entry-box2", shape);
         }
-        $('#shape-log').append (
-            $("<div/>")
-                .addClass("panel-buttons")
-                .attr("id", "save")
-                .append(
-                    $("<input/>")
-                        .addClass("btn btn-secondary")
-                        .attr("type", "submit")
-                        .attr("value", "Save Changes")
-                        .attr("id", "sbmt-attr")
-                )
-        );
+
         addListeners("#btn-hide", ".entry-box2");
-        
         console.log('Showing all attributes');
     });
     
@@ -473,13 +543,17 @@ $(document).ready(function() {
         console.log("Adding Default Attribute: Success.");
     });
     
-    $(document).on('click', "#sbmt-attr", function() {
+    $(document).on('click', "#btn-submit-view", function() {
         // loop through all the  attributes and add them to a JSON string
         let count2 = 0;
         let staticAttrs = document.querySelectorAll(".no-edit-attr");
         let attr = {};
         let shape = {};
         for (shape of shapes) {
+            if($("#shape-log").length === 0) {
+                break;
+            }
+            
             shape.attributes = [];
             $(".entry-box2").each( function() {
                 // check which shape has the button field belongs too
@@ -488,11 +562,11 @@ $(document).ready(function() {
                 }
     
                 // get the name of the current attribute
-                if ($(this).attr('placeholder') == "Enter Attribute"){
+                if ($(this).attr('placeholder') === "Enter Attribute"){
                     attr.name = $(this)[0].value;
                 }
                 // get the value of the current attribute
-                else if ($(this).attr('placeholder') == "Enter Value") {
+                else if ($(this).attr('placeholder') === "Enter Value") {
                     if (!attr.name) {
                         // get the name of the uneditable attribute at index count2
                         let temp = staticAttrs.item(count2);
@@ -519,7 +593,6 @@ $(document).ready(function() {
                         alert("ERROR: Failed to save attributes!")
                         return;
                     }
-                    console.log( JSON.stringify(attr));
     
                     // update the JSON array of attributes with the new attr
                     shape.attributes.push(attr);
@@ -527,26 +600,45 @@ $(document).ready(function() {
                 }
             }); 
         }
-
+        
+        
         // change the discard button to hide attributes
         $('#btn-hide').attr("value", "Hide Attributes")
-                      .css("background-color", "#9147ff");
+        .css("background-color", "#9147ff");
         
+        let currFile = getFile("#image");
+        // get the title and description values from their entry boxes
+        $(".entryBox").each( function() {
+            if ($(this).attr('id') === "enter-title-1"){
+                currFile.title = $(this)[0].value;
+                console.log('hele' + currFile.title);
+            }
+            else if ($(this).attr('id') === "enter-desc-1") {
+                currFile.descr = $(this)[0].value;
+                console.log('hele' + currFile.descr);
+            }
+        });
+        
+        // if shape log doesnt exist, we dont need to mess with the shapes
+        setShapes(currFile, shapes);
+        console.log(currFile);
+
+
         // make a post request with all the shapes and their attributes for the selected file 
-        // $.ajax({
-        //     type: 'post',            
-        //     dataType: 'json',      
-        //     url: '/post-attrs',   
-        //     data: shapes,
-        //     success: function (data) {
-        //         files = [...data];
-        //     },
-        //     fail: function(error) {
-        //         // Non-200 return, do something with error
-        //         $('#blah').html("On page load, received error from server");
-        //         console.log(error); 
-        //     }
-        // });
+        $.ajax({
+            type: 'post',            
+            dataType: 'json',
+            contentType: 'application/json',   
+            url: '/post-attrs',   
+            data: JSON.stringify({file:currFile}),
+            success: function (data) {
+                // console.log(shapes);
+            },
+            fail: function(error) {
+                alert("Failed to save your changes to the server.");
+                console.log(error.message);
+            }
+        });
                 
     });
     
@@ -764,119 +856,21 @@ $(document).ready(function() {
     $(document).on('change', '#image', function() {
         // change the image displayed based on the selected file
         try {
-            let fileName = $("#image option:selected").text();
+            let myFile = getFile("#image");
 
             $("#log2img")
-                .attr("src", fileName)
-                .attr("alt", fileName);
-
+                .attr("src", myFile.name)
+                .attr("alt", myFile.name);
+            
+            // remove all the shape panels inside the summary table
             $("#inside-table").children(".file-log").each(function () {
                 $(this).remove();
             });
             
-            // display the summary of the selected file name
-            files.forEach(file => {
-                // only process file info if the name matches the selected
-                // file name
-                if (file.name != fileName) {
-                    return;
-                }
+            // delete the attributes/shape list from svg view
+            $("#btn-hide").trigger("click");
 
-                $("#title2").children("input").attr("value", file.title);
-                $("#desc").children("input").attr("value", file.desc);
-
-                file.rectList.forEach((rect, index) => {
-                    let tempdiv = $('<div class="file-log"> \
-                                    </div>');
-                
-                    tempdiv.append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Rectangle " + (index + 1))
-                    )
-                    .append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Upper left corner: x = " + rect.x + rect.units + ", y = " + rect.y + rect.units + 
-                            "\nWidth: " + rect.w + rect.units + ", Height: " + rect.h + rect.units)
-                    )
-                    .append (
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text(rect.numAttr)
-                    );
-                
-                    $("#inside-table").append(tempdiv);
-                });
-                file.circList.forEach((circ, index) => {
-                    let tempdiv = $('<div class="file-log"> \
-                                    </div>');
-                
-                    tempdiv.append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Circle " + (index + 1))
-                    )
-                    .append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Centre: x = " + circ.cx + circ.units + ", y = " + circ.cy + circ.units + 
-                            ", radius: " + circ.r + circ.units)
-                    )
-                    .append (
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text(circ.numAttr)
-                    );
-                
-                    $("#inside-table").append(tempdiv);
-                });
-                file.pathList.forEach((path, index) => {
-                    let tempdiv = $('<div class="file-log"> \
-                                    </div>');
-                
-                    tempdiv.append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Path " + (index + 1))
-                    )
-                    .append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Path Data: " + path.d)
-                    )
-                    .append (
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text(path.numAttr)
-                    );
-                
-                    $("#inside-table").append(tempdiv);
-                });
-                file.groupList.forEach((group, index) => {
-                    let tempdiv = $('<div class="file-log"> \
-                                    </div>');
-                
-                    tempdiv.append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text("Group " + (index + 1))
-                    )
-                    .append(
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text(group.children + " child elements")
-                    )
-                    .append (
-                        $("<div/>")
-                            .addClass("view-content")
-                            .text(group.numAttr)
-                    );
-                
-                    $("#inside-table").append(tempdiv);
-                });
-            });
-
+            createSVGView(myFile);
         }
         catch (e) {
             console.log("ERROR: Failed to display image." + e.message)

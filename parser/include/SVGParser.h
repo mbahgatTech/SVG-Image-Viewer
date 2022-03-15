@@ -2,6 +2,7 @@
 #define SVGPARSER_H
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/encoding.h>
@@ -278,6 +279,18 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
  **/
 void addComponent(SVG* img, elementType type, void* newElement);
 
+/** Function to adding an element - Circle, Rectngle, or Path - to a group
+ *@pre List of valid groups exists and a component element to be added to the group 
+ *@post The appropriate component is added to the group with index in list
+ *@return a boolean value indicating success or failure of the function
+ *@param
+    struct - a pointer to a list struct 
+    elemType - enum value indicating elemtn to modify
+    index - index of thje lement to modify
+    newElement - struct containing name and value of the new component
+ **/
+bool addComponentToGroup (elementType type, int index, List *groups, void *newElement);
+
 /** Function to converting an Attribute into a JSON string
 *@pre Attribute is not NULL
 *@post Attribute has not been modified in any way
@@ -392,8 +405,24 @@ Rectangle* JSONtoRect(const char* svgString);
 **/
 Circle* JSONtoCircle(const char* svgString);
 
+/** Function to converting a JSON string into a Path struct
+*@pre JSON string is not NULL
+*@post Path has not been modified in any way
+*@return A newly allocated and initialized Path struct
+*@param str - a pointer to a string
+**/
+Path *JSONtoPath (const char *svgString);
 
-/* ******************************* List helper functions  - MUST be implemented *************************** */
+/** Function to converting a JSON string into an Attribute struct
+*@pre JSON string is not NULL
+*@post Attribute has not been modified in any way
+*@return A newly allocated and initialized Attribute struct
+*@param str - a pointer to a string
+**/
+Attribute *JSONtoAttr (const char *svgString);
+
+
+/* ******* List helper functions  - MUST be implemented ******* */
 
 void deleteAttribute( void* data);
 char* attributeToString(void* data);
@@ -420,5 +449,8 @@ char *fileToJSON(char *file);
 char *getTitle (char *file);
 char *getDesc (char *file);
 char *shapeListToAttrsJSON (List *shapes, elementType type);
+bool createShape(char *type, char *jsonString, char *fileName);
+bool JSONtoSVGFile (char *jsonString, char *filename);
+bool appendAttributeToFile (char *type, char *jsonString, int index, char *fileName);
 
 #endif

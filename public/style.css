@@ -240,14 +240,14 @@ h3 {
     width: 50%;
 }
 
-#btn-submit, #btn-submit-shape, #btn-show, .btn-add, #sbmt-attr,
+#btn-submit, #btn-submit-shape, #btn-submit-view, #btn-show, .btn-add, #sbmt-attr,
 #btn-hide, .shape-add, .shape-scale, .btn-del-shape, #btn-scale-shape {
     width: 175px;
     text-align: center;
     background-color: #9147ff;
 }
 
-#sbmt-attr, #btn-submit, #btn-submit-shape, #btn-scale-shape{
+#sbmt-attr, #btn-submit, #btn-submit-view, #btn-submit-shape, #btn-scale-shape{
     background-color: #04AA6D;
 }
 
