@@ -334,12 +334,12 @@ app.post('/post-attrs', function (req, res) {
 });
 
 app.post('/scale-shape-form', function (req, res) {
-  console.log(req.body);
   // initialize an ffi library to call the svg parser shared lib
   let fileData = ffi.Library('./libsvgparser', {
     'scaleShapes':['bool', ['float', 'float', 'string']]
   });
   
+  // scale the shapes for the given file
   let response = fileData.scaleShapes(req.body.rects, req.body.circs, "uploads/" + req.body.Image);
   if (!response) {
     res.status(400);
@@ -348,6 +348,152 @@ app.post('/scale-shape-form', function (req, res) {
   res.redirect('/');
 }); 
 
+app.post('/add-shape-form', function (req, res) { 
+  // initialize an ffi library to call the svg parser shared lib
+  let fileData = ffi.Library('./libsvgparser', {
+    'createShape':['bool', ['string', 'string', 'string']],
+  });
+
+  console.log(req.body);
+  let jsonObj = {};
+  let type = '';
+
+  // populate the json object with the shape data
+  if (req.body.shape === 'Rectangle') {
+    type = 'RECT';
+    jsonObj.x = req.body.x;
+    jsonObj.y = req.body.y;
+    jsonObj.width = req.body.width;
+    jsonObj.height = req.body.height;
+  }
+  else if (req.body.shape === 'Circle') {
+    type = 'CIRC';
+    jsonObj.cx = req.body.cx;
+    jsonObj.cy = req.body.cy;
+    jsonObj.r = req.body.r;
+  }
+  else if (req.body.shape === 'Path') {
+    type = 'PATH';
+    jsonObj.d = req.body.d;
+  }
+  
+  // append the shape to the given file
+  let response = fileData.createShape(type, JSON.stringify(jsonObj), "uploads/" + req.body.Image);
+  res.redirect('/');
+});
+
+app.post('/create', function (req, res) { 
+  // initialize an ffi library to call the svg parser shared lib
+  let fileData = ffi.Library('./libsvgparser', {
+    'createShape':['bool', ['string', 'string', 'string']],
+    'JSONtoSVGFile':['bool', ['string', 'string']]
+  });
+  
+  // initialize the file with the title and description
+  let svgJSON = {"title":req.body.title,"descr":req.body.descr};
+  fileData.JSONtoSVGFile(JSON.stringify(svgJSON), "uploads/" + req.body.name);
+  svgJSON = {};
+  
+  if (!req.body.shape) {
+    return res.redirect('/');
+  }
+
+  // add the shapes(s) to the svg file and redirect the user to home page
+  if ((typeof req.body.shape) === 'object') {
+    if(req.body.x) {
+      if ((typeof req.body.x) === 'object') {
+        // loop through all rectangle inputs and add them to the svg image
+        for(let i = 0; i < req.body.x.length; i++) {
+          svgJSON.x = req.body.x[i];
+          svgJSON.y = req.body.y[i];
+          svgJSON.w = req.body.width[i];
+          svgJSON.h = req.body.height[i];
+
+          fileData.createShape("RECT", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+          svgJSON = {};
+        }
+      }
+      else {
+        // only one rectangle exists so add that to the image
+        svgJSON.x = req.body.x;
+        svgJSON.y = req.body.y;
+        svgJSON.w = req.body.width;
+        svgJSON.h = req.body.height;
+
+        fileData.createShape("RECT", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+        svgJSON = {};
+      }
+    }
+
+    if(req.body.cx) {
+      if ((typeof req.body.cx) === 'object') {
+        // loop through all circle inputs and add them to the svg image
+        for(let i = 0; i < req.body.cx.length; i++) {
+          svgJSON.cx = req.body.cx[i];
+          svgJSON.cy = req.body.cy[i];
+          svgJSON.r = req.body.r[i];
+
+          fileData.createShape("CIRC", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+          svgJSON = {};
+        }
+      }
+      else {
+        // only one circle exists so add that to the image
+        svgJSON.cx = req.body.cx;
+        svgJSON.cy = req.body.cy;
+        svgJSON.r = req.body.r;
+
+        fileData.createShape("CIRC", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+        svgJSON = {};
+      }
+    }
+
+    if(req.body.d) {
+      if ((typeof req.body.d) === 'object') {
+        // loop through all path inputs and add them to the svg image
+        for(let i = 0; i < req.body.d.length; i++) {
+          svgJSON.d = req.body.d[i];
+
+          fileData.createShape("PATH", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+          svgJSON = {};
+        }
+      }
+      else {
+        // only one path exists so add that to the image
+        svgJSON.d = req.body.d;
+
+        fileData.createShape("PATH", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+        svgJSON = {};
+      }
+    }
+
+    return res.redirect('/');
+  }
+  
+  let type = '';
+  // populate the json object with the shape data
+  if (req.body.shape === 'Rectangle') {
+    type = 'RECT';
+    svgJSON.x = req.body.x;
+    svgJSON.y = req.body.y;
+    svgJSON.w = req.body.width;
+    svgJSON.h = req.body.height;
+  }
+  else if (req.body.shape === 'Circle') {
+    type = 'CIRC';
+    svgJSON.cx = req.body.cx;
+    svgJSON.cy = req.body.cy;
+    svgJSON.r = req.body.r;
+  }
+  else if (req.body.shape === 'Path') {
+    type = 'PATH';
+    svgJSON.d = req.body.d;
+  }
+
+  fileData.createShape(type, JSON.stringify(svgJSON), "uploads/" + req.body.name);
+
+  res.redirect('/');
+});
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);

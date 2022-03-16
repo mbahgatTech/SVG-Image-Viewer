@@ -659,7 +659,7 @@ $(document).ready(function() {
         let tempcontent = $('<div class="new-shape"> \
                             <div id="mySelect"> \
                                 <label>Select Image</label> \
-                                <select id="image2" class="image-select" name="Image"> \
+                                <select id="image2" class="image-select image-select2" name="Image"> \
                                 </select><br> \
                             </div> \
                             <label>Select Shape</label> \
@@ -676,25 +676,25 @@ $(document).ready(function() {
                                 <div class="file-log">\
                                     <div class="view-attrs2 no-edit-attr-shapes">x</div>\
                                     <div class="view-attrs2"> \
-                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
+                                        <input type="text" name="x" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
                                     </div> \
                                 </div> \
                                 <div class="file-log"> \
                                     <div class="view-attrs2 no-edit-attr-shapes">y</div> \
                                     <div class="view-attrs2"> \
-                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
+                                        <input type="text" name="y" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
                                     </div> \
                                 </div> \
                                 <div class="file-log"> \
                                     <div class="view-attrs2 no-edit-attr-shapes">Width</div> \
                                     <div class="view-attrs2"> \
-                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
+                                        <input type="text" name="width" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
                                     </div> \
                                 </div> \
                                 <div class="file-log"> \
                                     <div class="view-attrs2 no-edit-attr-shapes">Height</div> \
                                     <div class="view-attrs2"> \
-                                        <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
+                                        <input type="text" name="height" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
                                     </div> \
                                 </div>\
                                 <div class="panel-buttons" id="shape-del"> \
@@ -725,10 +725,11 @@ $(document).ready(function() {
         
         // insert the new shape panel before the button
         tempdiv.insertBefore($(this).parent());
-
+        
         // add the file names to the image selector
+        $('.image-select2 option').remove();
         for (let file of files) {
-            $('#image2').append(
+            $('.image-select2').append(
                 $('<option/>').text(file.name)
             );
         }
@@ -747,25 +748,25 @@ $(document).ready(function() {
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">x</div>\
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
+                                    <input type="text" name="x" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">y</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
+                                    <input type="text" name="y" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">Width:</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
+                                    <input type="text" name="width" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">Height:</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
+                                    <input type="text" name="height" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
                                 </div> \
                             </div>\
                             <div class="panel-buttons" id="shape-del"> \
@@ -786,19 +787,19 @@ $(document).ready(function() {
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">cx</div>\
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter cx"> \
+                                    <input type="text" name="cx" class="form-control entry-box3" value="0.5cm" placeholder="Enter cx"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">cy</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter cy"> \
+                                    <input type="text" name="cy" class="form-control entry-box3" value="0.5cm" placeholder="Enter cy"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">r</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="0.5cm" placeholder="Enter r"> \
+                                    <input type="text" name="r" class="form-control entry-box3" value="0.5cm" placeholder="Enter r"> \
                                 </div> \
                             </div> \
                             <div class="panel-buttons" id="shape-del"> \
@@ -819,7 +820,7 @@ $(document).ready(function() {
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">Path Data</div>\
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box3" value="M200,300 L400,50 L600,300 L800,550 L1000,300" placeholder="Enter Data"> \
+                                    <input type="text" name="d" class="form-control entry-box3" value="M200,300 L400,50 L600,300 L800,550 L1000,300" placeholder="Enter Data"> \
                                 </div> \
                             </div> \
                             <div class="panel-buttons" id="shape-del"> \

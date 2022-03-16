@@ -162,7 +162,7 @@ select {
     display: block;
 }
 
-#view-panel {
+#view-panel, #edit-panel, #create-panel {
     padding: 2%;
     width: 100%;
     display: block;
