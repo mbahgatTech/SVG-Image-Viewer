@@ -450,7 +450,9 @@ char *getTitle (char *file);
 char *getDesc (char *file);
 char *shapeListToAttrsJSON (List *shapes, elementType type);
 bool createShape(char *type, char *jsonString, char *fileName);
+bool createShapeinGroup (char *type, char *jsonString, char *fileName, int index);
 bool JSONtoSVGFile (char *jsonString, char *filename);
 bool appendAttributeToFile (char *type, char *jsonString, int index, char *fileName);
+bool appendAttributeToGroup (char *type, char *jsonString, int index, int groupIndex, char *fileName);
 
 #endif

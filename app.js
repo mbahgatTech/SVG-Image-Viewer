@@ -94,6 +94,7 @@ app.get('/get-files', function(req , res){
     // append all the file information about
     files.forEach(function (file) {
       if (!file || path.extname(file) != '.svg') {
+        fs.unlinkSync("uploads/" + file);
         return;
       }
 
@@ -127,10 +128,13 @@ app.get('/get-files', function(req , res){
       currFile.circList = otherData.circs;
       currFile.pathList = otherData.paths;
       currFile.groupList = otherData.groups;
+
+      // add the attrs lists to the the file
       currFile.rectsAttrsList = otherData.rectsAttrsList;
       currFile.circsAttrsList = otherData.circsAttrsList;
       currFile.pathsAttrsList = otherData.pathsAttrsList;
       currFile.groupsAttrsList = otherData.groupsAttrsList;
+      currFile.svgAttrs = otherData.svgAttrs;
 
       // add title and desc to the JSON object
       currFile.title = fileData.getTitle("uploads/" + currFile.name);
@@ -140,7 +144,7 @@ app.get('/get-files', function(req , res){
     });
     
     // respond with the list of JSON objects containing file names and sizes
-    res.status(200).send(fileObjs);
+    return res.status(200).send(fileObjs);
   });
   
 });
@@ -148,80 +152,190 @@ app.get('/get-files', function(req , res){
 
 app.post('/post-attrs', function (req, res) {
   let file = req.body.file;
-
-  console.log(file.title + file.descr);
   
   // initialize an ffi library to call the svg parser shared lib
   let fileData = ffi.Library('./libsvgparser', {
     'createShape':['bool', ['string', 'string', 'string']],
+    'createShapeinGroup':['bool', ['string', 'string', 'string', 'int']],
     'JSONtoSVGFile':['bool', ['string', 'string']],
-    'appendAttributeToFile':['bool', ['string', 'string', 'int', 'string']]
+    'appendAttributeToFile':['bool', ['string', 'string', 'int', 'string']],
+    'appendAttributeToGroup':['bool', ['string', 'string', 'int', 'int', 'string']]
   });
 
   try {
     let fileCreate = fileData.JSONtoSVGFile(JSON.stringify(file), "uploads/" + req.body.file.name);
     if (!fileCreate) {
-      res.status(400).send('Invalid input.');
+      return res.status(400).send('Invalid input.');
     }
     file = req.body.file;
+    
+    // get the number of components across all groups in the svg struct
+    let groupRects = 0, groupCircs = 0, groupPaths = 0; 
+    file.groupList.forEach((group) => {
+      groupRects += group.rects;
+      groupCircs += group.circs;
+      groupPaths += group.paths;
+    });
+  
+    // compute the total amount of components at the svg level
+    let maxRects = Math.max(0, file.rectList.length - groupRects);
+    let maxCircs = Math.max(0, file.circList.length - groupCircs);
+    let maxPaths = Math.max(0, file.pathList.length - groupPaths);
 
     // call create shape on each rectangle object and add them to the file
     file.rectList.forEach( (rect, index) => {
+      if (index >= maxRects) {
+        return;
+      }
+
       // add rectangle to the file and check the response for errors
       let response = fileData.createShape("RECT", JSON.stringify(rect), "uploads/" + file.name);
       if (!response) {
-        res.status(400).send('Invalid input.');
+        return res.status(400).send('Invalid input.');
       }
       
-      // add the attributes to the current rect and 
+      // add the attributes to the current rect
       file.rectsAttrsList[index].forEach((attrs) => {
-        response = fileData.appendAttributeToFile("RECT", JSON.stringify(attrs), index, file.name);
+        response = fileData.appendAttributeToFile("RECT", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          res.status(400).send('Invalid input.');
+          return res.status(400).send('Invalid input.');
         }
       });
     });
 
     // create all circles and add them to the svg file
     file.circList.forEach((circ, index) => {
-      let response = fileData.createShape("CIRC", JSON.stringify(circ), "uploads/" + file.name);
-      if (!response) {
-        res.status(400).send('Invalid input.');
+      if (index >= maxCircs) {
+        return;
       }
 
-      // add the attributes to the current circ and 
+      let response = fileData.createShape("CIRC", JSON.stringify(circ), "uploads/" + file.name);
+      if (!response) {
+        return res.status(400).send('Invalid input.');
+      }
+
+      // add the attributes to the current circ
       file.circsAttrsList[index].forEach((attrs) => {
         response = fileData.appendAttributeToFile("CIRC", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          res.status(400).send('Invalid input.');
+          return res.status(400).send('Invalid input.');
         }
       });
     });
 
     // create all paths and add them to the svg file
     file.pathList.forEach((path, index) => {
-      let response = fileData.createShape("PATH", JSON.stringify(path), "uploads/" + file.name);
-      if (!response) {
-        res.status(400).send('Invalid input.');
+      if (index >= maxPaths) {
+        return;
       }
 
-      // add the attributes to the current circ and 
+      let response = fileData.createShape("PATH", JSON.stringify(path), "uploads/" + file.name);
+      if (!response) {
+        return res.status(400).send('Invalid input.');
+      }
+
+      // add the attributes to the current path 
       file.pathsAttrsList[index].forEach((attrs) => {
+        if (attrs.val === 'd' || attrs.val === 'data') {
+          return;
+        }
+
         response = fileData.appendAttributeToFile("PATH", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          res.status(400).send('Invalid input.');
+          return res.status(400).send('Invalid input.');
         }
       });
+    });
+    
+    // create all groups and add them to the svg file
+    file.groupList.forEach((group, index) => {
+      let response = fileData.createShape("GROUP", "", "uploads/" + file.name);
+      if (!response) {
+        return res.status(400).send('Invalid input.');
+      }
+
+      // add the attributes to the current path 
+      file.groupsAttrsList[index].forEach((attrs) => {
+        response = fileData.appendAttributeToFile("GROUP", JSON.stringify(attrs), index, "uploads/" + file.name);
+        if(!response) {
+          return res.status(400).send('Invalid input.');
+        }
+      });
+
+      // append the remaining components not added to the svg in these structs
+      for (let i = maxRects; (i - maxRects) < group.rects; i++) {
+        response = fileData.createShapeinGroup("RECT", JSON.stringify(file.rectList[i]), "uploads/" + file.name, index);
+        if (!response) {
+          return res.status(400).send('Invalid input.');
+        }
+
+        // add the attributes to the current rect
+        file.rectsAttrsList[i].forEach((attrs) => {
+          response = fileData.appendAttributeToGroup("RECT", JSON.stringify(attrs), i - maxRects, index, "uploads/" + file.name);
+          if(!response) {
+            return res.status(400).send('Invalid input.');
+          }
+        });
+      }
+      maxRects += group.rects;
+
+      for (let i = maxCircs; (i - maxCircs) < group.circs; i++) {
+        response = fileData.createShapeinGroup("CIRC", JSON.stringify(file.circList[i]), "uploads/" + file.name, index);
+        if(!response) {
+          return res.status(400).send('Invalid input.');
+        }
+
+        // add the attributes to the current circ
+        file.circsAttrsList[i].forEach((attrs) => {
+          response = fileData.appendAttributeToGroup("CIRC", JSON.stringify(attrs), i - maxCircs, index, "uploads/" + file.name);
+          if(!response) {
+            return res.status(400).send('Invalid input.');
+          }
+        });
+      }
+      maxCircs += group.circs;
+
+      for (let i = maxPaths; (i - maxPaths) < group.paths; i++) {
+        response = fileData.createShapeinGroup("PATH", JSON.stringify(file.pathList[i]), "uploads/" + file.name, index);
+        if(!response) {
+          return res.status(400).send('Invalid input.');
+        }
+
+        // add the attributes to the current path 
+        file.pathsAttrsList[i].forEach((attrs) => {
+          if (attrs.val === 'd' || attrs.val === 'data') {
+            return;
+          }
+
+          response = fileData.appendAttributeToGroup("PATH", JSON.stringify(attrs), i - maxPaths, index, "uploads/" + file.name, );
+          if(!response) {
+            return res.status(400).send('Invalid input.');
+          }
+        });
+      }
+      maxPaths += group.paths;
+    });
+
+    // add all the svg attributes to the svg image
+    file.svgAttrs.forEach((attr) => {
+      let response = fileData.appendAttributeToFile("SVG", JSON.stringify(attr), 0, "uploads/" + file.name);
+      if(!response) {
+        return res.status(400).send('Invalid input.');
+      }
     });
   }
   catch (errr) {
     console.log(errr.message);
-    res.status(500).send(errr.message);
+    return;
   }
   
-  res.send('');
-  // res.redirect('/');
+  return res.status(200).send(file);
 });
+
+// app.post('scale-shape-form', function (req, res) {
+  
+// }); 
+
 
 app.listen(portNum);
 console.log('Running app at localhost: ' + portNum);

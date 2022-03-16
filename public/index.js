@@ -107,9 +107,13 @@ $(document).ready(function() {
         $("#log2img")
                 .attr("src", file.name)
                 .attr("alt", file.name);
-        $("#title2").children("input").attr("value", file.title);
-        $("#desc").children("input").attr("value", file.descr);
 
+        $("#title2").children("input").each(function () {
+            $(this).val(file.title);
+        });
+        $("#desc").children("input").each(function () {
+            $(this).val(file.descr);
+        });
         
         file.rectList.forEach((rect, index) => {
             let tempdiv = $('<div class="file-log"> \
@@ -611,11 +615,9 @@ $(document).ready(function() {
         $(".entryBox").each( function() {
             if ($(this).attr('id') === "enter-title-1"){
                 currFile.title = $(this)[0].value;
-                console.log('hele' + currFile.title);
             }
             else if ($(this).attr('id') === "enter-desc-1") {
                 currFile.descr = $(this)[0].value;
-                console.log('hele' + currFile.descr);
             }
         });
         
@@ -631,16 +633,24 @@ $(document).ready(function() {
             contentType: 'application/json',   
             url: '/post-attrs',   
             data: JSON.stringify({file:currFile}),
-            success: function (data) {
-                // console.log(shapes);
+            success: function () {
+                let url = $('#log2img').attr("src");
+                $('#log2img').attr("src", url + `?v=${new Date().getTime()}`);
             },
             fail: function(error) {
                 alert("Failed to save your changes to the server.");
                 console.log(error.message);
             }
         });
-                
     });
+
+    // function updateLogs (file) {
+    //     if (!file) {
+    //         return undefined;
+    //     }
+
+    //     $("#log-panel").children(".file-log");
+    // }
     
     $(".shape-add").click(function() {
         // make new dropboxes for the user to select the image and the type of

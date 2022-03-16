@@ -31,7 +31,7 @@ bool JSONtoSVGFile (char *jsonString, char *filename) {
 }
 
 bool createShape(char *type, char *jsonString, char *fileName) {
-    if (type == NULL || jsonString == NULL || fileName == NULL) {
+    if (type == NULL || (jsonString == NULL && strcmp(type, "GROUP") != 0) || fileName == NULL) {
         return false;
     }
         
@@ -55,11 +55,62 @@ bool createShape(char *type, char *jsonString, char *fileName) {
         Path *path = JSONtoPath(jsonString);
         addComponent(new, PATH, path);
     }
+    else if (strcmp(type, "GROUP") == 0) {
+        // allocate a new group and add it to the image
+        Group *grp = malloc(sizeof(Group));
+        grp -> rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+        grp -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
+        grp -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
+        grp -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
+        grp -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+        addComponent(new, GROUP, grp);
+    }
     else {
         deleteSVG(new);
         return false;
     }
     
+    // validate the new SVG struct and write it back to the file
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    writeSVG(new, fileName);
+    deleteSVG(new);
+
+    return true;
+}
+
+bool createShapeinGroup (char *type, char *jsonString, char *fileName, int index) {
+    if (type == NULL || jsonString == NULL || fileName == NULL) {
+        return false;
+    }
+
+    // read the svg file into a new SVG struct
+    SVG *new = createSVG(fileName);
+    if (new == NULL) {
+        return false;
+    }
+
+    // create the shape of type "type" from the jsonString parameter
+    // and add it to the group
+    if (strcmp(type, "RECT") == 0) {
+        Rectangle *rect = JSONtoRect(jsonString);
+        addComponentToGroup(RECT, index, new -> groups, rect);
+    }
+    else if (strcmp(type, "CIRC") == 0) {
+        Circle *circ = JSONtoCircle(jsonString);
+        addComponentToGroup(CIRC, index, new -> groups, circ);
+    }
+    else if (strcmp(type, "PATH") == 0) {
+        Path *path = JSONtoPath(jsonString);
+        addComponentToGroup(PATH, index, new -> groups, path);
+    }
+    else {
+        deleteSVG(new);
+        return false;
+    }
+
     // validate the new SVG struct and write it back to the file
     if(!validateSVG(new, "svg.xsd")) {
         deleteSVG(new);
@@ -101,6 +152,127 @@ bool appendAttributeToFile (char *type, char *jsonString, int index, char *fileN
     }
     else if (strcmp(type, "GROUP") == 0) {
         setAttribute(new, GROUP, index, attr);
+    }
+    else if (strcmp(type, "SVG") == 0) {
+        setAttribute(new, SVG_IMG, 0, attr);
+    }
+    else {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // validate the new svg struct and write it to the file
+    if (!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    writeSVG(new, fileName);
+    deleteSVG(new);
+
+    return true;
+}
+
+bool appendAttributeToGroup (char *type, char *jsonString, int index, int groupIndex, char *fileName) {
+    if (type == NULL || jsonString == NULL || fileName == NULL || index < 0 || groupIndex < 0) {
+        return false;
+    }
+
+    // create an SVG struct from the given file name
+    SVG *new = createSVG(fileName);
+    if(new == NULL) {
+        return false;
+    }
+
+    // create the attribute struct from the given jsonString
+    Attribute *attr = JSONtoAttr(jsonString);
+    if (attr == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // get the required group with index of groupIndex
+    int i = 0;
+    void *data = NULL;
+    ListIterator iter = createIterator(new -> groups);
+    while ((data = nextElement(&iter)) != NULL && i < groupIndex) {
+        i++;
+    }
+
+    if (data == NULL) {
+        deleteSVG(new);
+        deleteAttribute(attr);
+        return false;
+    }
+    
+    Group *grp = (Group *)data;
+
+    // call set attribute on the svg struct using the given parameters
+    if (strcmp(type, "RECT") == 0) {
+        // get the rectangle with the given index
+        i = 0;
+        data = NULL;
+        iter = createIterator(grp -> rectangles);
+        while ((data = nextElement(&iter)) != NULL && i < index) {
+            i++;
+        }
+
+        if (data == NULL) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+
+        // set the attribute of the rectangle
+        if(!editAttributes(((Rectangle *)data) -> otherAttributes, attr)) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+    }
+    else if (strcmp(type, "CIRC") == 0) {
+        // get the circle with the given index
+        i = 0;
+        data = NULL;
+        iter = createIterator(grp -> circles);
+        while ((data = nextElement(&iter)) != NULL && i < index) {
+            i++;
+        }
+
+        if (data == NULL) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+
+        // set the attribute of the circle
+        if(!editAttributes(((Circle *)data) -> otherAttributes, attr)) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+    }
+    else if (strcmp(type, "PATH") == 0) {
+        // get the path with the given index
+        i = 0;
+        data = NULL;
+        iter = createIterator(grp -> paths);
+        while ((data = nextElement(&iter)) != NULL && i < index) {
+            i++;
+        }
+
+        if (data == NULL) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+
+        // set the attribute of the path
+
+        if(!editAttributes(((Path *)data) -> otherAttributes, attr)) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
     }
     else {
         deleteSVG(new);
@@ -153,18 +325,21 @@ char *fileToJSON(char *file) {
     char *attrsString4 = shapeListToAttrsJSON(objects, GROUP);
     freeList(objects);
 
+    char *attrsString5 = attrListToJSON(new -> otherAttributes);
+
     // add more fields to the JSON string, title, desc and components
     char *finalString = malloc(sizeof(char) * (strlen(jsonString) + strlen(",\"rects\":,\"circs\":,\"paths\":,\"groups\":,\"attrs\":") 
-        + strlen(",\"rectAttrsList\":,\"circsAttrsList\":,\"pathsAttrsList\":,\"groupsAttrsList\":") + strlen(attrsString) + 
+        + strlen(",\"rectAttrsList\":,\"circsAttrsList\":,\"pathsAttrsList\":,\"groupsAttrsList\":,\"svgAttrs\":") + strlen(attrsString) + 
         strlen(attrsString2) + strlen(attrsString3) + strlen(attrsString4) + strlen(rectString) + strlen(circString) + strlen(pathString) 
-        + strlen(groupString) + 1));
+        + strlen(groupString) + strlen(attrsString5) + 1));
 
     jsonString[strlen(jsonString) - 1] = ',';        
     sprintf(finalString, "%s\"rects\":%s,\"circs\":%s,\"paths\":%s,\"groups\":%s"
-            ",\"rectsAttrsList\":%s,\"circsAttrsList\":%s,\"pathsAttrsList\":%s,\"groupsAttrsList\":%s}", 
+            ",\"rectsAttrsList\":%s,\"circsAttrsList\":%s,\"pathsAttrsList\":%s,\"groupsAttrsList\":%s,\"svgAttrs\":%s}", 
         jsonString, rectString, circString, pathString, groupString, attrsString,
-        attrsString2, attrsString3, attrsString4);
+        attrsString2, attrsString3, attrsString4, attrsString5);
     
+    // free used memory
     deleteSVG(new);
     free(jsonString);
     free(rectString);
@@ -175,6 +350,7 @@ char *fileToJSON(char *file) {
     free(attrsString2);
     free(attrsString3);
     free(attrsString4);
+    free(attrsString5);
 
     return finalString;
 }
@@ -1158,7 +1334,9 @@ bool addComponentToGroup (elementType type, int index, List *groups, void *newEl
     int i = 0;
     void *data;
     ListIterator iter = createIterator(groups);
-    while((data = nextElement(&iter)) != NULL && i < index);
+    while((data = nextElement(&iter)) != NULL && i < index) {
+        i++;
+    }
 
     // check for elementType and add newElement to the list of its type
     Group *grp = (Group *)data;
@@ -1378,7 +1556,27 @@ char* groupToJSON(const Group *g) {
     jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
                                         strlen(",\"numAttr\":") + strlen(temp) + 2));
     strcat(jsonString,",\"numAttr\":");
-    strcat(jsonString, temp);  
+    strcat(jsonString, temp); 
+    
+    // append the number of each component list to the jsonString
+    sprintf(temp, "%d", g -> rectangles -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"rects\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"rects\":");
+    strcat(jsonString, temp);
+
+    sprintf(temp, "%d", g -> circles -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"circs\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"circs\":");
+    strcat(jsonString, temp);
+    
+    sprintf(temp, "%d", g -> paths -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"paths\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"paths\":");
+    strcat(jsonString, temp);
+
     strcat(jsonString, "}"); 
 
     free(temp); 
