@@ -414,6 +414,71 @@ char *shapeListToAttrsJSON (List *shapes, elementType type) {
     return jsonString;
 }
 
+bool scaleShapes (float rectScale, float circScale, char *filename) {
+    if (rectScale < 0 || circScale < 0 || filename == NULL) {
+        return false;
+    }
+    
+    // create a new svg struct from the given file name
+    SVG *new = createSVG(filename);
+    if (new == NULL) {
+        return false;
+    }
+
+    if (!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // get the rectangles in the svg struct and scale their widths/heights
+    // with the rects scale factor
+    List *rects = getRects(new);
+    if (rects == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+
+    void *data;
+    ListIterator iter = createIterator(rects);
+    while((data = nextElement(&iter)) != NULL) {
+        ((Rectangle *)data) -> x = (((Rectangle *)data) -> x) * rectScale;
+        ((Rectangle *)data) -> y = (((Rectangle *)data) -> y) * rectScale;
+        ((Rectangle *)data) -> width = (((Rectangle *)data) -> width) * rectScale;
+        ((Rectangle *)data) -> height = (((Rectangle *)data) -> height) * rectScale;
+    }
+    freeList(rects);
+
+    // get the rectangles in the svg struct and scale their widths/heights
+    // with the rects scale factor
+    List *circs = getCircles(new);
+    if (circs == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+
+    iter = createIterator(circs);
+    while((data = nextElement(&iter)) != NULL) {
+        ((Circle *)data) -> cx = (((Circle *)data) -> cx) * circScale;
+        ((Circle *)data) -> cy = (((Circle *)data) -> cy) * circScale;
+        ((Circle *)data) -> r = (((Circle *)data) -> r) * circScale;
+    }
+    freeList(circs);
+    
+    //validate svg and write it to the file
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+
+    if(!writeSVG(new, filename)) {
+        deleteSVG(new);
+        return false;
+    }
+
+    deleteSVG(new);
+    return true;
+}
+
 char *getTitle (char *file) {
     if (file == NULL) {
         return NULL;

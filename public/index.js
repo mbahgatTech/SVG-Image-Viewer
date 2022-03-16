@@ -922,13 +922,13 @@ $(document).ready(function() {
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">Rectangle</div>\
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
+                                    <input type="text" name="rects" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">Circle</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
+                                    <input type="text" name="circs" class="form-control entry-box4" value="1" placeholder="Enter Scale Factor"> \
                                 </div> \
                             </div> \
                             <div class="panel-buttons" id="submit-shape-scale"> \

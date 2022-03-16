@@ -13,6 +13,7 @@ const fileUpload = require('express-fileupload');
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname+'/uploads')));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }))
 
 // Minimization
 const fs = require('fs');
@@ -332,9 +333,20 @@ app.post('/post-attrs', function (req, res) {
   return res.status(200).send(file);
 });
 
-// app.post('scale-shape-form', function (req, res) {
+app.post('/scale-shape-form', function (req, res) {
+  console.log(req.body);
+  // initialize an ffi library to call the svg parser shared lib
+  let fileData = ffi.Library('./libsvgparser', {
+    'scaleShapes':['bool', ['float', 'float', 'string']]
+  });
   
-// }); 
+  let response = fileData.scaleShapes(req.body.rects, req.body.circs, "uploads/" + req.body.Image);
+  if (!response) {
+    res.status(400);
+  }
+
+  res.redirect('/');
+}); 
 
 
 app.listen(portNum);

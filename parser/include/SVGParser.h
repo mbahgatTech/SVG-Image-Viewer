@@ -454,5 +454,6 @@ bool createShapeinGroup (char *type, char *jsonString, char *fileName, int index
 bool JSONtoSVGFile (char *jsonString, char *filename);
 bool appendAttributeToFile (char *type, char *jsonString, int index, char *fileName);
 bool appendAttributeToGroup (char *type, char *jsonString, int index, int groupIndex, char *fileName);
+bool scaleShapes (float rectScale, float circScale, char *filename);
 
 #endif
