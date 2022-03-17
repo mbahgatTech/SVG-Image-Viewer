@@ -32,6 +32,8 @@ $(document).ready(function() {
             return;
         }
 
+        $('#log-panel').find('.file-log').remove();
+
         for (let file of files) {
             // append a new div element to the file log panel containing the new image
             $('#log-panel').append(
@@ -89,7 +91,17 @@ $(document).ready(function() {
                 )
             );
         }
+        
+        // get old selected option so you can restore it later 
+        // (need this if u made this ajax call after image edits)
+        let name2 = $('#image').val();
+        let editedFile = 1;
+        if(!name2 || name2.length <= 0) {
+            editedFile = 0;
+            name2 = files[0].name;
+        }
 
+        $('.image-select').find('option').remove();
         $('.image-select').each(function () {
             for (let file of files) {
                 $(this).append(
@@ -98,7 +110,24 @@ $(document).ready(function() {
             }
         });
         
-        createSVGView(files[0]);
+        $('#image').val(name2).trigger('change');
+        let myFile2 = getFile('#image');
+
+        createSVGView(myFile2);
+        
+        if (editedFile === 0) {
+            return;
+        }
+
+        // update images containing the updated image
+        $('img').each(function () {
+            let oldSrc = $(this).attr('src');
+            if (!oldSrc.includes(myFile2.name)) {
+                return;
+            }
+
+            $(this).attr('src', oldSrc + `?v=${new Date().getTime()}`);
+        });
     });
     
     function createSVGView (file) {
@@ -114,6 +143,9 @@ $(document).ready(function() {
         $("#desc").children("input").each(function () {
             $(this).val(file.descr);
         });
+
+        // remove existing table
+        $('#inside-table').find('.file-log').remove();
         
         file.rectList.forEach((rect, index) => {
             let tempdiv = $('<div class="file-log"> \
@@ -439,7 +471,7 @@ $(document).ready(function() {
                 file.rectList[index].y = shape.attributes.filter(function(attr) { return attr.name === 'y'; })[0].value;
                 file.rectList[index].w = shape.attributes.filter(function(attr) { return attr.name === 'width'; })[0].value;
                 file.rectList[index].h = shape.attributes.filter(function(attr) { return attr.name === 'height'; })[0].value;
-                // file.rectList[index] = file.rectList[index].x.match(/[a-zA-z]*/g);
+                // file.rectList[index].units = file.rectList[index].x.match(/[a-zA-z]*/g);
 
                 // push other attributes to the rects attrs list and filter out the required ones
                 file.rectsAttrsList.push([...shape.attributes]);
@@ -469,7 +501,6 @@ $(document).ready(function() {
 
                 file.pathsAttrsList.push([...shape.attributes]);
                 file.pathsAttrsList[idx] = file.pathsAttrsList[idx].filter(function (attr) { return attr.name != 'data'; });
-                console.log(file.pathsAttrsList[idx]);
                 file.pathList[idx].numAttr = file.pathsAttrsList[idx].length; 
             }
             else if (shape.type === "Group") {
@@ -490,7 +521,13 @@ $(document).ready(function() {
                         .addClass("file-log")
         );
 
-        for (shape of shapes) {
+        let file = getFile("#image");
+        $('#shape-log').append ($('<h5/>').text("SVG"));
+        let svgElem = {attributes:file.svgAttrs};
+        // append an attributes panel that consists of a field labels
+        appendAttributes("shape-log", "svg1", "view-attrs-svg no-edit-attr-svg", "form-control entry-box2-svg", svgElem);
+
+        for (let shape of shapes) {
             $('#shape-log').append ($('<h5/>').text(shape.type + " " + (shape.printIndex + 1)));
 
             // append an attributes panel that consists of a field labels
@@ -536,8 +573,24 @@ $(document).ready(function() {
                                 .attr("placeholder", "Enter Value")
                         )
                 );
+        
+        // add the appropriate class for svg attribute text boxes
+        let svg = 0;
+        if ($(this).parent().parent().attr("id") === "svg1") {
+            svg = 1;
+            tempdiv.children().each(function () {
+                $(this).children().removeClass('entry-box2');
+                $(this).children().addClass('entry-box2-svg');
+            });
+        }
         tempdiv.insertBefore($(this).parent());
-        addListeners("#btn-hide", ".entry-box2");
+
+        if(svg === 0) {
+            addListeners("#btn-hide", ".entry-box2");
+        }
+        else {
+            addListeners("#btn-hide", ".entry-box2-svg");
+        }
 
         // change hide button to discard
         $('#btn-hide')
@@ -619,12 +672,52 @@ $(document).ready(function() {
             else if ($(this).attr('id') === "enter-desc-1") {
                 currFile.descr = $(this)[0].value;
             }
-        });
-        
-        // if shape log doesnt exist, we dont need to mess with the shapes
+        });        
         setShapes(currFile, shapes);
-        console.log(currFile);
+        
+        attr = {};
+        count2 = 0;
+        currFile.svgAttrs = [];
+        staticAttrs = staticAttrs = document.querySelectorAll(".no-edit-attr-svg");
+        $(".entry-box2-svg").each(function () {
+            // get the name of the current attribute
+            if ($(this).attr('placeholder') === "Enter Attribute"){
+                attr.name = $(this)[0].value;
+            }
+            // get the value of the current attribute
+            else if ($(this).attr('placeholder') === "Enter Value") {
+                if (!attr.name) {
+                    // get the name of the uneditable attribute at index count2
+                    let temp = staticAttrs.item(count2);
+                    if (!temp) {
+                        console.log("Failed to save the attributes due to undefined names.");
+                        alert("ERROR: Failed to save attributes!")
+                        console.log($(this)[0].value);
+                        return;
+                    }
+                    
+                    // convert html element to a html object
+                    temp = $(temp);
+                    if (!temp || !temp.text()) {
+                        return;
+                    }
+                    attr.name = temp.text();
+                    count2++;
+                }
+                
+                // give the current attribute th value of this.
+                attr.value = $(this)[0].value;
+                if (!attr.value) {
+                    console.log("Failed to save the attributes due to undefined values.");
+                    alert("ERROR: Failed to save attributes!")
+                    return;
+                }
 
+                // update the JSON array of attributes with the new attr
+                currFile.svgAttrs.push(attr);
+                attr = {};
+            }
+        });
 
         // make a post request with all the shapes and their attributes for the selected file 
         $.ajax({
@@ -634,8 +727,7 @@ $(document).ready(function() {
             url: '/post-attrs',   
             data: JSON.stringify({file:currFile}),
             success: function () {
-                let url = $('#log2img').attr("src");
-                $('#log2img').attr("src", url + `?v=${new Date().getTime()}`);
+                updateLogs(currFile);
             },
             fail: function(error) {
                 alert("Failed to save your changes to the server.");
@@ -644,13 +736,52 @@ $(document).ready(function() {
         });
     });
 
-    // function updateLogs (file) {
-    //     if (!file) {
-    //         return undefined;
-    //     }
+    function updateLogs (file) {
+        if (!file) {
+            return undefined;
+        }
 
-    //     $("#log-panel").children(".file-log");
-    // }
+        let name = file.name;
+
+        // sync ajax
+        makeCall();
+        
+        // update the log-panel with new file info
+        $("#log-panel").children(".file-log").each(function () {
+            let child = $($(this).children("a")[0]);
+            if (child.attr("href") === file.name) {
+                console.log(child.attr("href"));
+                $(this).replaceWith(`
+                <div id="newDiv1" class="file-log">
+                    <a href="${file.name}" download="${file.name}">
+                        <img src="${file.name}?v=${new Date().getTime()}" class="fieldElems" id="elem2">
+                    </a>
+                    <a class="fieldElems" href="${file.name}" download="${file.name}">${file.name}</a>
+                    <div class="fieldElems">${file.size}</div>
+                    <div class="fieldElems">${file.rects}</div>
+                    <div class="fieldElems">${file.circs}</div>
+                    <div class="fieldElems">${file.paths}</div>
+                    <div class="fieldElems">${file.groups}</div>
+                </div>`);
+            }
+        });
+    }
+
+    function makeCall () {
+        return $.ajax({
+            type: 'get',            //Request type
+            dataType: 'json',       //Data type - we will use JSON for almost everything 
+            url: '/get-files',   //The server endpoint we are connecting to
+            success: function (data) {
+                files = [...data];
+            },
+            fail: function(error) {
+                // Non-200 return, do something with error
+                alert('Failed to load images from the server.');
+                console.log(error); 
+            }
+        });
+    }
     
     $(".shape-add").click(function() {
         // make new dropboxes for the user to select the image and the type of

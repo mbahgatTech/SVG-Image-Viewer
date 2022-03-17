@@ -142,7 +142,7 @@ select {
     width: 100%;    
 }
 
-.entryBox, .entry-box2, .entry-box3, .entry-box4 {
+.entryBox, .entry-box2, .entry-box2-svg, .entry-box3, .entry-box4 {
     width: 50%;
     float: right;
     margin-right: 40%;
@@ -151,7 +151,7 @@ select {
     border: 1px solid #ccc;
 }
 
-.entry-box2, .entry-box3, .entry-box4 {
+.entry-box2, .entry-box2-svg, .entry-box3, .entry-box4 {
     width: 100%;
     margin-right: auto;
     margin-left: auto;
@@ -224,7 +224,7 @@ h3 {
     border: #9147ff;
 }
 
-.view-content, .view-attrs, .view-attrs2 {
+.view-content, .view-attrs, .view-attrs2, .view-attrs-svg {
     display: block;
     float: left;
     width: 33%;
@@ -232,7 +232,7 @@ h3 {
     border: #9147ff;
 }
 
-.view-attrs, .view-attrs2 {
+.view-attrs, .view-attrs2, .view-attrs-svg {
     width: 50%;
 }
 
