@@ -405,13 +405,13 @@ Rectangle* JSONtoRect(const char* svgString);
 **/
 Circle* JSONtoCircle(const char* svgString);
 
-/** Function to converting a JSON string into a Path struct
-*@pre JSON string is not NULL
+/** Function to converting a data string into a Path struct
+*@pre string is not NULL
 *@post Path has not been modified in any way
 *@return A newly allocated and initialized Path struct
 *@param str - a pointer to a string
 **/
-Path *JSONtoPath (const char *svgString);
+Path *DatatoPath (const char *svgString);
 
 /** Function to converting a JSON string into an Attribute struct
 *@pre JSON string is not NULL

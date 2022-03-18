@@ -52,7 +52,7 @@ bool createShape(char *type, char *jsonString, char *fileName) {
         addComponent(new, CIRC, circ);
     }
     else if (strcmp(type, "PATH") == 0) {
-        Path *path = JSONtoPath(jsonString);
+        Path *path = DatatoPath(jsonString);
         addComponent(new, PATH, path);
     }
     else if (strcmp(type, "GROUP") == 0) {
@@ -103,7 +103,7 @@ bool createShapeinGroup (char *type, char *jsonString, char *fileName, int index
         addComponentToGroup(CIRC, index, new -> groups, circ);
     }
     else if (strcmp(type, "PATH") == 0) {
-        Path *path = JSONtoPath(jsonString);
+        Path *path = DatatoPath(jsonString);
         addComponentToGroup(PATH, index, new -> groups, path);
     }
     else {
@@ -2036,7 +2036,7 @@ Circle* JSONtoCircle(const char* svgString) {
     return circle;
 }
 
-Path *JSONtoPath (const char *svgString) {
+Path *DatatoPath (const char *svgString) {
     if (svgString == NULL) {
         return NULL;
     }
@@ -2046,13 +2046,9 @@ Path *JSONtoPath (const char *svgString) {
     strcpy(newPath -> data, "");
     newPath -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
 
-    // copy the first 64 characters of the path field in svgString into path data
-    char *temp = getField((char *)svgString, "d");
-    if (temp != NULL) {
-        strncpy(newPath -> data, temp, sizeof(char) * 64);
-        newPath -> data[64] = '\0';
-        free(temp);
-    }
+    // copy the first 64 characters of the path in svgString into path data
+    strncpy(newPath -> data, svgString, sizeof(char) * 64);
+    newPath -> data[64] = '\0';
 
     return newPath; 
 }

@@ -13,7 +13,7 @@ const fileUpload = require('express-fileupload');
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname+'/uploads')));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Minimization
 const fs = require('fs');
@@ -72,7 +72,19 @@ app.get('/uploads/:name', function(req , res){
   });
 });
 
-//******************** Your code goes here ******************** 
+//******************** Your code goes here ********************
+
+const fileData = ffi.Library('./libsvgparser', {
+  'fileToJSON': ['string', ['string']],
+  'getTitle': ['string', ['string']],
+  'getDesc': ['string', ['string']],
+  'createShape':['bool', ['string', 'string', 'string']],
+  'createShapeinGroup':['bool', ['string', 'string', 'string', 'int']],
+  'scaleShapes':['bool', ['float', 'float', 'string']],
+  'JSONtoSVGFile':['bool', ['string', 'string']],
+  'appendAttributeToFile':['bool', ['string', 'string', 'int', 'string']],
+  'appendAttributeToGroup':['bool', ['string', 'string', 'int', 'int', 'string']]
+});
 
 // an end point that sends all the files in uploads as JSON objects 
 // containing all the image information and the 
@@ -84,13 +96,6 @@ app.get('/get-files', function(req , res){
     if (err) {
       return res.status(500).send(err);
     }
-    
-    // declare the file to json function call from the c parser
-    let fileData = ffi.Library('./libsvgparser', {
-      'fileToJSON': ['string', ['string']],
-      'getTitle': ['string', ['string']],
-      'getDesc': ['string', ['string']]
-    });
 
     // append all the file information about
     files.forEach(function (file) {
@@ -104,7 +109,7 @@ app.get('/get-files', function(req , res){
 
       // add the file size to the list
       let stats = fs.statSync(__dirname + '/uploads/' + file);
-      currFile.size = stats.size + "KB";
+      currFile.size = stats.size + "B";
 
       // get the svg file properties from the c API
       let otherData = fileData.fileToJSON("uploads/" + file);
@@ -153,16 +158,6 @@ app.get('/get-files', function(req , res){
 
 app.post('/post-attrs', function (req, res) {
   let file = req.body.file;
-  
-  // initialize an ffi library to call the svg parser shared lib
-  let fileData = ffi.Library('./libsvgparser', {
-    'createShape':['bool', ['string', 'string', 'string']],
-    'createShapeinGroup':['bool', ['string', 'string', 'string', 'int']],
-    'JSONtoSVGFile':['bool', ['string', 'string']],
-    'appendAttributeToFile':['bool', ['string', 'string', 'int', 'string']],
-    'appendAttributeToGroup':['bool', ['string', 'string', 'int', 'int', 'string']]
-  });
-
   try {
     let fileCreate = fileData.JSONtoSVGFile(JSON.stringify(file), "uploads/" + req.body.file.name);
     if (!fileCreate) {
@@ -192,14 +187,14 @@ app.post('/post-attrs', function (req, res) {
       // add rectangle to the file and check the response for errors
       let response = fileData.createShape("RECT", JSON.stringify(rect), "uploads/" + file.name);
       if (!response) {
-        return res.status(400).send('Invalid input.');
+        throw ('Invalid Rectangle core attribute input.');
       }
       
       // add the attributes to the current rect
       file.rectsAttrsList[index].forEach((attrs) => {
         response = fileData.appendAttributeToFile("RECT", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid Rectangle attributes input.');
         }
       });
     });
@@ -212,14 +207,14 @@ app.post('/post-attrs', function (req, res) {
 
       let response = fileData.createShape("CIRC", JSON.stringify(circ), "uploads/" + file.name);
       if (!response) {
-        return res.status(400).send('Invalid input.');
+        throw ('Invalid Circle core attribute input.');
       }
 
       // add the attributes to the current circ
       file.circsAttrsList[index].forEach((attrs) => {
         response = fileData.appendAttributeToFile("CIRC", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid Circle attributes input.');
         }
       });
     });
@@ -230,20 +225,20 @@ app.post('/post-attrs', function (req, res) {
         return;
       }
 
-      let response = fileData.createShape("PATH", JSON.stringify(path), "uploads/" + file.name);
+      let response = fileData.createShape("PATH", path.d, "uploads/" + file.name);
       if (!response) {
-        return res.status(400).send('Invalid input.');
+        throw ('Invalid path data input.');
       }
 
       // add the attributes to the current path 
       file.pathsAttrsList[index].forEach((attrs) => {
-        if (attrs.val === 'd' || attrs.val === 'data') {
+        if (!attrs || attrs.val === 'd' || attrs.val === 'data') {
           return;
         }
-
+        
         response = fileData.appendAttributeToFile("PATH", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid Path attributes input.');
         }
       });
     });
@@ -252,14 +247,14 @@ app.post('/post-attrs', function (req, res) {
     file.groupList.forEach((group, index) => {
       let response = fileData.createShape("GROUP", "", "uploads/" + file.name);
       if (!response) {
-        return res.status(400).send('Invalid input.');
+        throw ('Failed to create group.');
       }
 
       // add the attributes to the current path 
       file.groupsAttrsList[index].forEach((attrs) => {
         response = fileData.appendAttributeToFile("GROUP", JSON.stringify(attrs), index, "uploads/" + file.name);
         if(!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid Group attributes input.');
         }
       });
 
@@ -267,14 +262,14 @@ app.post('/post-attrs', function (req, res) {
       for (let i = maxRects; (i - maxRects) < group.rects; i++) {
         response = fileData.createShapeinGroup("RECT", JSON.stringify(file.rectList[i]), "uploads/" + file.name, index);
         if (!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid Rectangle core attribute input.');
         }
 
         // add the attributes to the current rect
         file.rectsAttrsList[i].forEach((attrs) => {
           response = fileData.appendAttributeToGroup("RECT", JSON.stringify(attrs), i - maxRects, index, "uploads/" + file.name);
           if(!response) {
-            return res.status(400).send('Invalid input.');
+            throw ('Invalid Rectangle attributes input.');
           }
         });
       }
@@ -283,23 +278,23 @@ app.post('/post-attrs', function (req, res) {
       for (let i = maxCircs; (i - maxCircs) < group.circs; i++) {
         response = fileData.createShapeinGroup("CIRC", JSON.stringify(file.circList[i]), "uploads/" + file.name, index);
         if(!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid Circle core attribute input.');
         }
 
         // add the attributes to the current circ
         file.circsAttrsList[i].forEach((attrs) => {
           response = fileData.appendAttributeToGroup("CIRC", JSON.stringify(attrs), i - maxCircs, index, "uploads/" + file.name);
           if(!response) {
-            return res.status(400).send('Invalid input.');
+            throw ('Invalid Circle attributes input.');
           }
         });
       }
       maxCircs += group.circs;
 
       for (let i = maxPaths; (i - maxPaths) < group.paths; i++) {
-        response = fileData.createShapeinGroup("PATH", JSON.stringify(file.pathList[i]), "uploads/" + file.name, index);
+        response = fileData.createShapeinGroup("PATH", file.pathList[i].d, "uploads/" + file.name, index);
         if(!response) {
-          return res.status(400).send('Invalid input.');
+          throw ('Invalid path data input.');
         }
 
         // add the attributes to the current path 
@@ -310,7 +305,7 @@ app.post('/post-attrs', function (req, res) {
 
           response = fileData.appendAttributeToGroup("PATH", JSON.stringify(attrs), i - maxPaths, index, "uploads/" + file.name, );
           if(!response) {
-            return res.status(400).send('Invalid input.');
+            throw ('Invalid Path attributes input.');
           }
         });
       }
@@ -321,24 +316,19 @@ app.post('/post-attrs', function (req, res) {
     file.svgAttrs.forEach((attr) => {
       let response = fileData.appendAttributeToFile("SVG", JSON.stringify(attr), 0, "uploads/" + file.name);
       if(!response) {
-        return res.status(400).send('Invalid input.');
+        throw ('SVG Attributes are invalid.');
       }
     });
   }
   catch (errr) {
     console.log(errr.message);
-    return;
+    return res.status(400).send('Setting attributes failed due to invalid input. ' + errr);
   }
   
   return res.status(200).send(file);
 });
 
-app.post('/scale-shape-form', function (req, res) {
-  // initialize an ffi library to call the svg parser shared lib
-  let fileData = ffi.Library('./libsvgparser', {
-    'scaleShapes':['bool', ['float', 'float', 'string']]
-  });
-  
+app.post('/scale-shape-form', function (req, res) {  
   // scale the shapes for the given file
   let response = fileData.scaleShapes(req.body.rects, req.body.circs, "uploads/" + req.body.Image);
   if (!response) {
@@ -349,12 +339,6 @@ app.post('/scale-shape-form', function (req, res) {
 }); 
 
 app.post('/add-shape-form', function (req, res) { 
-  // initialize an ffi library to call the svg parser shared lib
-  let fileData = ffi.Library('./libsvgparser', {
-    'createShape':['bool', ['string', 'string', 'string']],
-  });
-
-  console.log(req.body);
   let jsonObj = {};
   let type = '';
 
@@ -363,8 +347,8 @@ app.post('/add-shape-form', function (req, res) {
     type = 'RECT';
     jsonObj.x = req.body.x;
     jsonObj.y = req.body.y;
-    jsonObj.width = req.body.width;
-    jsonObj.height = req.body.height;
+    jsonObj.w = req.body.width;
+    jsonObj.h = req.body.height;
   }
   else if (req.body.shape === 'Circle') {
     type = 'CIRC';
@@ -378,17 +362,16 @@ app.post('/add-shape-form', function (req, res) {
   }
   
   // append the shape to the given file
-  let response = fileData.createShape(type, JSON.stringify(jsonObj), "uploads/" + req.body.Image);
+  if (type === 'PATH') {
+    fileData.createShape(type, jsonObj.d, "uploads/" + req.body.Image);
+  }
+  else {
+    fileData.createShape(type, JSON.stringify(jsonObj), "uploads/" + req.body.Image);
+  }
   res.redirect('/');
 });
 
 app.post('/create', function (req, res) { 
-  // initialize an ffi library to call the svg parser shared lib
-  let fileData = ffi.Library('./libsvgparser', {
-    'createShape':['bool', ['string', 'string', 'string']],
-    'JSONtoSVGFile':['bool', ['string', 'string']]
-  });
-  
   // initialize the file with the title and description
   let svgJSON = {"title":req.body.title,"descr":req.body.descr};
   fileData.JSONtoSVGFile(JSON.stringify(svgJSON), "uploads/" + req.body.name);
@@ -454,15 +437,13 @@ app.post('/create', function (req, res) {
         for(let i = 0; i < req.body.d.length; i++) {
           svgJSON.d = req.body.d[i];
 
-          fileData.createShape("PATH", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+          fileData.createShape("PATH", svgJSON.d, "uploads/" + req.body.name);
           svgJSON = {};
         }
       }
       else {
         // only one path exists so add that to the image
-        svgJSON.d = req.body.d;
-
-        fileData.createShape("PATH", JSON.stringify(svgJSON), "uploads/" + req.body.name);
+        fileData.createShape("PATH", req.body.d, "uploads/" + req.body.name);
         svgJSON = {};
       }
     }

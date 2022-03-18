@@ -10,6 +10,7 @@ $(document).ready(function() {
         url: '/get-files',   //The server endpoint we are connecting to
         success: function (data) {
             files = [...data];
+            console.log("Fetching files success.");
         },
         fail: function(error) {
             // Non-200 return, do something with error
@@ -266,7 +267,7 @@ $(document).ready(function() {
             if (shape.type === "Path") {
                 let index = i - file.rects - file.circs;
                 shape.printIndex = index;
-                shape.attributes = file.pathsAttrsList[index];
+                shape.attributes = [...file.pathsAttrsList[index]];
 
                 // make sure you dont return undefined lists, replace with empty list
                 // if undefined
@@ -413,7 +414,9 @@ $(document).ready(function() {
         
         // loop through all the attributes and append their names and values 
         // to their respective fields
+        console.log(shape.attributes);
         for (let attr of shape.attributes) {
+            console.log(attr);
             $('#' + newId)
             .append (
                 $("<div/>")
@@ -471,7 +474,6 @@ $(document).ready(function() {
                 file.rectList[index].y = shape.attributes.filter(function(attr) { return attr.name === 'y'; })[0].value;
                 file.rectList[index].w = shape.attributes.filter(function(attr) { return attr.name === 'width'; })[0].value;
                 file.rectList[index].h = shape.attributes.filter(function(attr) { return attr.name === 'height'; })[0].value;
-                // file.rectList[index].units = file.rectList[index].x.match(/[a-zA-z]*/g);
 
                 // push other attributes to the rects attrs list and filter out the required ones
                 file.rectsAttrsList.push([...shape.attributes]);
@@ -526,6 +528,7 @@ $(document).ready(function() {
         let svgElem = {attributes:file.svgAttrs};
         // append an attributes panel that consists of a field labels
         appendAttributes("shape-log", "svg1", "view-attrs-svg no-edit-attr-svg", "form-control entry-box2-svg", svgElem);
+        addListeners("#btn-hide", ".entry-box2-svg");
 
         for (let shape of shapes) {
             $('#shape-log').append ($('<h5/>').text(shape.type + " " + (shape.printIndex + 1)));
@@ -677,8 +680,10 @@ $(document).ready(function() {
         
         attr = {};
         count2 = 0;
-        currFile.svgAttrs = [];
         staticAttrs = staticAttrs = document.querySelectorAll(".no-edit-attr-svg");
+        if ($(".entry-box2-svg").length > 0) {
+            currFile.svgAttrs = [];
+        }
         $(".entry-box2-svg").each(function () {
             // get the name of the current attribute
             if ($(this).attr('placeholder') === "Enter Attribute"){
@@ -728,10 +733,11 @@ $(document).ready(function() {
             data: JSON.stringify({file:currFile}),
             success: function () {
                 updateLogs(currFile);
+                console.log(`Updated ${currFile.name} successfully.`);
             },
-            fail: function(error) {
-                alert("Failed to save your changes to the server.");
-                console.log(error.message);
+            error: function(error) {
+                alert("ERROR: " + error.responseText);
+                console.log(error.responseText);
             }
         });
     });
@@ -740,8 +746,6 @@ $(document).ready(function() {
         if (!file) {
             return undefined;
         }
-
-        let name = file.name;
 
         // sync ajax
         makeCall();
@@ -1036,6 +1040,25 @@ $(document).ready(function() {
         }
     });
 
+    $('#uploadForm').submit('/upload', function (action) {
+        action.preventDefault();
+
+        // check if the uploaded file name already exists
+        let fileName = $('[name="uploadFile"]')[0].files[0].name;
+        for (file of files) {
+            // alert the user if the file already exists and dont proceed 
+            // with the request
+            if (file.name == fileName) {
+                alert(`${fileName} already exists on the server, please rename the file before reupload.`);
+                return;
+            }
+        }
+
+        // if the file is unique then unbind this listener from
+        // the form which will result in the request being forwarded to the server
+        $(this).unbind('submit').submit();
+    });
+
     $(document).on('click', '#scale-btn', function () {
         try {
             // make a dropdown list for the image that will be scaled and input
@@ -1088,6 +1111,12 @@ $(document).ready(function() {
             alert("Failed to display the shape scaling panel.");
         }
     });
+
+    // $('#scale-form').submit('/scale-shape-form', function(action) {
+    //     action.preventDefault();
+
+    //     console.log(action);
+    // });
 
     $(document).on('click', '#scale-hide', function () {
         $('#scale-form').remove();
