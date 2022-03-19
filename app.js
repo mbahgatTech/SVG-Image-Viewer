@@ -20,7 +20,7 @@ const fs = require('fs');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
 // Important, pass in port as in `npm run dev 1234`, do not change
-const portNum = process.argv[2];
+const portNum = process.env.PORT || process.argv[2];
 
 // Send HTML at root, do not change
 app.get('/',function(req,res){
