@@ -1,11 +1,538 @@
 /*
 Authored by: Mazen Bahgat (1157821)
-Last Revision Date: February 18th 2022
+Last Revision Date: March 14th 2022
 */
 
 
 #include "SVGHelpers.h"
 #include "SVGParser.h"
+
+bool JSONtoSVGFile (char *jsonString, char *filename) {
+    if (jsonString == NULL || filename == NULL) {
+        return false;
+    }
+    
+    // generate a new svg struct from the json string and validate it
+    SVG *new = JSONtoSVG(jsonString);
+    if (new == NULL) {
+        return false;
+    } 
+    
+    if (!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // write the svg struct to a file with name fileName
+    bool result = writeSVG(new, filename);
+    deleteSVG(new);
+
+    return result;
+}
+
+bool createShape(char *type, char *jsonString, char *fileName) {
+    if (type == NULL || (jsonString == NULL && strcmp(type, "GROUP") != 0) || fileName == NULL) {
+        return false;
+    }
+        
+    // read the svg file into a new SVG struct
+    SVG *new = createSVG(fileName);
+    if (new == NULL) {
+        return false;
+    }
+
+    // create the shape of type "type" from the jsonString parameter
+    // and add it to the svg struct
+    if (strcmp(type, "RECT") == 0) {
+        Rectangle *rect = JSONtoRect(jsonString);
+        addComponent(new, RECT, rect);
+    }
+    else if (strcmp(type, "CIRC") == 0) {
+        Circle *circ = JSONtoCircle(jsonString);
+        addComponent(new, CIRC, circ);
+    }
+    else if (strcmp(type, "PATH") == 0) {
+        Path *path = DatatoPath(jsonString);
+        addComponent(new, PATH, path);
+    }
+    else if (strcmp(type, "GROUP") == 0) {
+        // allocate a new group and add it to the image
+        Group *grp = malloc(sizeof(Group));
+        grp -> rectangles = initializeList(&rectangleToString, &deleteRectangle, &compareRectangles);
+        grp -> circles = initializeList(&circleToString, &deleteCircle, &compareCircles);
+        grp -> paths = initializeList(&pathToString, &deletePath, &comparePaths);
+        grp -> groups = initializeList(&groupToString, &deleteGroup, &compareGroups);
+        grp -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+        addComponent(new, GROUP, grp);
+    }
+    else {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // validate the new SVG struct and write it back to the file
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    writeSVG(new, fileName);
+    deleteSVG(new);
+
+    return true;
+}
+
+bool createShapeinGroup (char *type, char *jsonString, char *fileName, int index) {
+    if (type == NULL || jsonString == NULL || fileName == NULL) {
+        return false;
+    }
+
+    // read the svg file into a new SVG struct
+    SVG *new = createSVG(fileName);
+    if (new == NULL) {
+        return false;
+    }
+
+    // create the shape of type "type" from the jsonString parameter
+    // and add it to the group
+    if (strcmp(type, "RECT") == 0) {
+        Rectangle *rect = JSONtoRect(jsonString);
+        addComponentToGroup(RECT, index, new -> groups, rect);
+    }
+    else if (strcmp(type, "CIRC") == 0) {
+        Circle *circ = JSONtoCircle(jsonString);
+        addComponentToGroup(CIRC, index, new -> groups, circ);
+    }
+    else if (strcmp(type, "PATH") == 0) {
+        Path *path = DatatoPath(jsonString);
+        addComponentToGroup(PATH, index, new -> groups, path);
+    }
+    else {
+        deleteSVG(new);
+        return false;
+    }
+
+    // validate the new SVG struct and write it back to the file
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    writeSVG(new, fileName);
+    deleteSVG(new);
+
+    return true;
+}
+
+bool appendAttributeToFile (char *type, char *jsonString, int index, char *fileName) {
+    if (type == NULL || jsonString == NULL || fileName == NULL || index < 0) {
+        return false;
+    }
+    
+    // create an SVG struct from the given file name
+    SVG *new = createSVG(fileName);
+    if(new == NULL) {
+        return false;
+    }
+
+    // create the attribute struct from the given jsonString
+    Attribute *attr = JSONtoAttr(jsonString);
+    if (attr == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+
+    // call set attribute on the svg struct using the given parameters
+    if (strcmp(type, "RECT") == 0) {
+        if(!setAttribute(new, RECT, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
+    }
+    else if (strcmp(type, "CIRC") == 0) {
+        if(!setAttribute(new, CIRC, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
+    }
+    else if (strcmp(type, "PATH") == 0) {
+        if(!setAttribute(new, PATH, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
+    }
+    else if (strcmp(type, "GROUP") == 0) {
+        if(!setAttribute(new, GROUP, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
+    }
+    else if (strcmp(type, "SVG") == 0) {
+        if(!setAttribute(new, SVG_IMG, 0, attr)) {
+            deleteSVG(new);
+            return false;
+        }
+    }
+    else {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // validate the new svg struct and write it to the file
+    if (!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    writeSVG(new, fileName);
+    deleteSVG(new);
+
+    return true;
+}
+
+bool appendAttributeToGroup (char *type, char *jsonString, int index, int groupIndex, char *fileName) {
+    if (type == NULL || jsonString == NULL || fileName == NULL || index < 0 || groupIndex < 0) {
+        return false;
+    }
+
+    // create an SVG struct from the given file name
+    SVG *new = createSVG(fileName);
+    if(new == NULL) {
+        return false;
+    }
+
+    // create the attribute struct from the given jsonString
+    Attribute *attr = JSONtoAttr(jsonString);
+    if (attr == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // get the required group with index of groupIndex
+    int i = 0;
+    void *data = NULL;
+    ListIterator iter = createIterator(new -> groups);
+    while ((data = nextElement(&iter)) != NULL && i < groupIndex) {
+        i++;
+    }
+
+    if (data == NULL) {
+        deleteSVG(new);
+        deleteAttribute(attr);
+        return false;
+    }
+    
+    Group *grp = (Group *)data;
+
+    // call set attribute on the svg struct using the given parameters
+    if (strcmp(type, "RECT") == 0) {
+        // get the rectangle with the given index
+        i = 0;
+        data = NULL;
+        iter = createIterator(grp -> rectangles);
+        while ((data = nextElement(&iter)) != NULL && i < index) {
+            i++;
+        }
+
+        if (data == NULL) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+
+        // set the attribute of the rectangle
+        if(!editAttributes(((Rectangle *)data) -> otherAttributes, attr)) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+    }
+    else if (strcmp(type, "CIRC") == 0) {
+        // get the circle with the given index
+        i = 0;
+        data = NULL;
+        iter = createIterator(grp -> circles);
+        while ((data = nextElement(&iter)) != NULL && i < index) {
+            i++;
+        }
+
+        if (data == NULL) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+
+        // set the attribute of the circle
+        if(!editAttributes(((Circle *)data) -> otherAttributes, attr)) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+    }
+    else if (strcmp(type, "PATH") == 0) {
+        // get the path with the given index
+        i = 0;
+        data = NULL;
+        iter = createIterator(grp -> paths);
+        while ((data = nextElement(&iter)) != NULL && i < index) {
+            i++;
+        }
+
+        if (data == NULL) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+
+        // set the attribute of the path
+
+        if(!editAttributes(((Path *)data) -> otherAttributes, attr)) {
+            deleteSVG(new);
+            deleteAttribute(attr);
+            return false;
+        }
+    }
+    else {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // validate the new svg struct and write it to the file
+    if (!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    writeSVG(new, fileName);
+    deleteSVG(new);
+
+    return true;
+}
+
+char *fileToJSON(char *file) {
+    if (file == NULL) {
+        return NULL;
+    }
+    
+    // create and validate and SVG struct from the given file name
+    SVG *new = createSVG(file);
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return NULL;
+    }
+    
+    // convert the struct to a jsonString summary
+    char *jsonString = SVGtoJSON(new);
+
+    List *objects = getRects(new);
+    char *rectString = rectListToJSON(objects);
+    char *attrsString = shapeListToAttrsJSON(objects, RECT);
+    freeList(objects);
+
+    objects = getCircles(new);
+    char *circString = circListToJSON(objects);
+    char *attrsString2 = shapeListToAttrsJSON(objects, CIRC);
+    freeList(objects);
+
+    objects = getPaths(new);
+    char *pathString = pathListToJSON(objects);
+    char *attrsString3 = shapeListToAttrsJSON(objects, PATH);
+    freeList(objects);
+
+    objects = getGroups(new);
+    char *groupString = groupListToJSON(objects);
+    char *attrsString4 = shapeListToAttrsJSON(objects, GROUP);
+    freeList(objects);
+
+    char *attrsString5 = attrListToJSON(new -> otherAttributes);
+
+    // add more fields to the JSON string, title, desc and components
+    char *finalString = malloc(sizeof(char) * (strlen(jsonString) + strlen(",\"rects\":,\"circs\":,\"paths\":,\"groups\":,\"attrs\":") 
+        + strlen(",\"rectAttrsList\":,\"circsAttrsList\":,\"pathsAttrsList\":,\"groupsAttrsList\":,\"svgAttrs\":") + strlen(attrsString) + 
+        strlen(attrsString2) + strlen(attrsString3) + strlen(attrsString4) + strlen(rectString) + strlen(circString) + strlen(pathString) 
+        + strlen(groupString) + strlen(attrsString5) + 1));
+
+    jsonString[strlen(jsonString) - 1] = ',';        
+    sprintf(finalString, "%s\"rects\":%s,\"circs\":%s,\"paths\":%s,\"groups\":%s"
+            ",\"rectsAttrsList\":%s,\"circsAttrsList\":%s,\"pathsAttrsList\":%s,\"groupsAttrsList\":%s,\"svgAttrs\":%s}", 
+        jsonString, rectString, circString, pathString, groupString, attrsString,
+        attrsString2, attrsString3, attrsString4, attrsString5);
+    
+    // free used memory
+    deleteSVG(new);
+    free(jsonString);
+    free(rectString);
+    free(circString);
+    free(pathString);
+    free(groupString);
+    free(attrsString);
+    free(attrsString2);
+    free(attrsString3);
+    free(attrsString4);
+    free(attrsString5);
+
+    return finalString;
+}
+
+char *shapeListToAttrsJSON (List *shapes, elementType type) {
+    if (shapes == NULL) {
+        return NULL;
+    }
+    
+    char **attrsList = NULL;
+    ListIterator iter = createIterator(shapes);
+    void *data;
+    int i = 0;
+
+    // loop through all the shapes and add each shape's attribute list
+    // to  the array of strings.
+    while((data = nextElement(&iter)) != NULL) {
+        attrsList = realloc(attrsList, sizeof(char *) * (i + 1));
+
+        if (type == RECT) {
+            attrsList[i] = attrListToJSON(((Rectangle *)data) -> otherAttributes);
+        }
+
+        if (type == CIRC) {
+            attrsList[i] = attrListToJSON(((Circle *)data) -> otherAttributes);
+        }
+
+        if (type == PATH) {
+            attrsList[i] = attrListToJSON(((Path *)data) -> otherAttributes);
+        }
+
+        if (type == GROUP) {
+            attrsList[i] = attrListToJSON(((Group *)data) -> otherAttributes);
+        }
+
+        i++;
+    }
+    
+    char *jsonString = malloc(sizeof(char) * 2);
+    strcpy (jsonString, "[");
+
+    // add the attribute lists to jsonString containing a list of JSON arrays
+    for (i = 0; i < shapes -> length; i++) {
+        jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + strlen(attrsList[i]) + 2));
+
+        if (i > 0) {
+            strcat(jsonString, ",");
+        }
+
+        strcat(jsonString, attrsList[i]);
+
+        free(attrsList[i]);
+        attrsList[i] = NULL;
+    }
+    
+    // close the JSON list and return it
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 2));
+    strcat(jsonString, "]");
+    free(attrsList);
+    
+    return jsonString;
+}
+
+bool scaleShapes (float rectScale, float circScale, char *filename) {
+    if (rectScale < 0 || circScale < 0 || filename == NULL) {
+        return false;
+    }
+    
+    // create a new svg struct from the given file name
+    SVG *new = createSVG(filename);
+    if (new == NULL) {
+        return false;
+    }
+
+    if (!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+    
+    // get the rectangles in the svg struct and scale their widths/heights
+    // with the rects scale factor
+    List *rects = getRects(new);
+    if (rects == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+
+    void *data;
+    ListIterator iter = createIterator(rects);
+    while((data = nextElement(&iter)) != NULL) {
+        ((Rectangle *)data) -> x = (((Rectangle *)data) -> x) * rectScale;
+        ((Rectangle *)data) -> y = (((Rectangle *)data) -> y) * rectScale;
+        ((Rectangle *)data) -> width = (((Rectangle *)data) -> width) * rectScale;
+        ((Rectangle *)data) -> height = (((Rectangle *)data) -> height) * rectScale;
+    }
+    freeList(rects);
+
+    // get the rectangles in the svg struct and scale their widths/heights
+    // with the rects scale factor
+    List *circs = getCircles(new);
+    if (circs == NULL) {
+        deleteSVG(new);
+        return false;
+    }
+
+    iter = createIterator(circs);
+    while((data = nextElement(&iter)) != NULL) {
+        ((Circle *)data) -> cx = (((Circle *)data) -> cx) * circScale;
+        ((Circle *)data) -> cy = (((Circle *)data) -> cy) * circScale;
+        ((Circle *)data) -> r = (((Circle *)data) -> r) * circScale;
+    }
+    freeList(circs);
+    
+    //validate svg and write it to the file
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return false;
+    }
+
+    if(!writeSVG(new, filename)) {
+        deleteSVG(new);
+        return false;
+    }
+
+    deleteSVG(new);
+    return true;
+}
+
+char *getTitle (char *file) {
+    if (file == NULL) {
+        return NULL;
+    }
+    
+    // create and validate and SVG struct from the given file name
+    SVG *new = createSVG(file);
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return NULL;
+    }
+    
+    // copy the title, delete the svg and return the temp string
+    char *temp = malloc(sizeof(char) * (strlen(new -> title) + 1));
+    strcpy(temp, new -> title);
+    deleteSVG(new);
+
+    return temp;
+}
+
+char *getDesc (char *file) {
+    if (file == NULL) {
+        return NULL;
+    }
+    
+    // create and validate and SVG struct from the given file name
+    SVG *new = createSVG(file);
+    if(!validateSVG(new, "svg.xsd")) {
+        deleteSVG(new);
+        return NULL;
+    }
+    
+    // copy the desc, delete the svg and return the temp string
+    char *temp = malloc(sizeof(char) * (strlen(new -> description) + 1));
+    strcpy(temp, new -> description);
+    deleteSVG(new);
+
+    return temp;
+}
 
 SVG* createSVG(const char* fileName) {
     LIBXML_TEST_VERSION
@@ -41,20 +568,20 @@ SVG* createSVG(const char* fileName) {
 
     // copy only the first 255 chars or length of the first namespace to fit into
     // our SVG namespace element. Note: only 1 namesapce is assumed in this program
-    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, 255);
+    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, sizeof(char) * 255);
 
 
     char *tempPtr = findTitle(svgNode);
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> title, tempPtr, 255);
+        strncpy(tempSVG -> title, tempPtr, sizeof(char) * 255);
         tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> description, tempPtr, 255);
+        strncpy(tempSVG -> description, tempPtr, sizeof(char) * 255);
         tempSVG -> description[255] = '\0';
     }
 
@@ -459,20 +986,20 @@ SVG* createValidSVG(const char* fileName, const char* schemaFile) {
 
     // copy only the first 255 chars or length of the first namespace to fit into
     // our SVG namespace element. Note: only 1 namesapce is assumed in this program
-    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, 255);
+    strncpy(tempSVG -> namespace, (char *)svgNode -> nsDef -> href, sizeof(char) * 255);
 
 
     char *tempPtr = findTitle(svgNode);
     // copy first 255 or length chars of title
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> title, tempPtr, 255);
+        strncpy(tempSVG -> title, tempPtr, sizeof(char) * 255);
         tempSVG -> title[255] = '\0'; 
     }
     
     tempPtr = findDesc(svgNode);
     // copy first 255 or length chars of desc
     if (tempPtr != NULL) {
-        strncpy(tempSVG -> description, tempPtr, 255);
+        strncpy(tempSVG -> description, tempPtr, sizeof(char) * 255);
         tempSVG -> description[255] = '\0'; 
     }
 
@@ -553,14 +1080,9 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
 
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(rect -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(rect -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
@@ -579,14 +1101,9 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
 
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(circle -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(circle -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
@@ -605,14 +1122,9 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
         
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(path -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(path -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
@@ -632,18 +1144,17 @@ bool validateSVG(const SVG* img, const char* schemaFile) {
         }
         
         // check all other attributes for invalid name pointer
-        void *attrs;
-        ListIterator iter2 = createIterator(group -> otherAttributes);
-        while((attrs = nextElement(&iter2)) != NULL) {
-            Attribute *currAttr = (Attribute *)attrs;
-            if (currAttr -> name == NULL) {
-                freeList(objects);
-                return false;
-            }
+        if (!checkValidAttrs(group -> otherAttributes)) {
+            freeList(objects);
+            return false;
         }
     }
     freeList(objects);
-
+    
+    // check other attributes of img for invalid name pointer
+    if (!checkValidAttrs(img -> otherAttributes)) {
+        return false;
+    }
 
     return true;
 }
@@ -688,7 +1199,7 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
         }
         // data is rectangle at elemIndex
         Rectangle *rect = (Rectangle *)data;
-        char units[50];
+        char *units = rect -> units;
         // check if newAttribute is one of the core attributes
         if(strcmp(newAttribute -> name, "x") == 0) {
             if (!getUnits(units, newAttribute -> value, &rect -> x)) {
@@ -752,7 +1263,7 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
         }
         // data is circle at elemIndex
         Circle *circle = (Circle *)data;
-        char units[50];
+        char *units = circle -> units;
         // check if newAttribute is one of the core attributes
         if(strcmp(newAttribute -> name, "cx") == 0) {
             if(!getUnits(units, newAttribute -> value, &circle -> cx)) {
@@ -762,7 +1273,7 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
             free(newAttribute -> name);
             free(newAttribute);
         }
-        else if(strcmp(newAttribute -> name, "y") == 0) {
+        else if(strcmp(newAttribute -> name, "cy") == 0) {
             if(!getUnits(units, newAttribute -> value, &circle -> cy)) {
                 return false;
             }
@@ -887,6 +1398,54 @@ void addComponent(SVG* img, elementType type, void* newElement) {
             insertBack(img -> paths, newElement);
         }
     }
+    else if(type == GROUP) {
+        if(img -> groups) {
+            insertBack(img -> groups, newElement);
+        }
+    }
+}
+
+bool addComponentToGroup (elementType type, int index, List *groups, void *newElement) {
+    if (groups == NULL || groups -> length == 0 || index < 0 || index > groups -> length || newElement == NULL) {
+        return false;
+    }
+
+    // iterate over the groups array until the specified group is reached
+    int i = 0;
+    void *data;
+    ListIterator iter = createIterator(groups);
+    while((data = nextElement(&iter)) != NULL && i < index) {
+        i++;
+    }
+
+    // check for elementType and add newElement to the list of its type
+    Group *grp = (Group *)data;
+    if (type == RECT) {
+        if (grp -> rectangles) {
+            insertBack(grp -> rectangles, newElement);
+        }
+        else {
+            return false;
+        }
+    }
+    else if (type == CIRC) {
+        if (grp -> circles) {
+            insertBack(grp -> circles, newElement); 
+        }
+        else {
+            return false;
+        }
+    }
+    else if(type == PATH) {
+        if (grp -> paths) {
+            insertBack(grp -> paths, newElement);
+        }
+        else {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 char* attrToJSON(const Attribute *a) {
@@ -1077,7 +1636,27 @@ char* groupToJSON(const Group *g) {
     jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
                                         strlen(",\"numAttr\":") + strlen(temp) + 2));
     strcat(jsonString,",\"numAttr\":");
-    strcat(jsonString, temp);  
+    strcat(jsonString, temp); 
+    
+    // append the number of each component list to the jsonString
+    sprintf(temp, "%d", g -> rectangles -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"rects\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"rects\":");
+    strcat(jsonString, temp);
+
+    sprintf(temp, "%d", g -> circles -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"circs\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"circs\":");
+    strcat(jsonString, temp);
+    
+    sprintf(temp, "%d", g -> paths -> length);
+    jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
+                                        strlen(",\"paths\":") + strlen(temp) + 2));
+    strcat(jsonString,",\"paths\":");
+    strcat(jsonString, temp);
+
     strcat(jsonString, "}"); 
 
     free(temp); 
@@ -1353,13 +1932,15 @@ SVG* JSONtoSVG(const char* svgString) {
     // parse svgString for title and desc
     char *temp = getField((char *)svgString, "title");
     if (temp != NULL) {
-        strcpy(img -> title, temp);
+        strncpy(img -> title, temp, sizeof(char) * 255);
+        img -> title[255] = '\0';
         free(temp);
     }
 
     temp = getField((char *)svgString, "descr");
     if (temp != NULL) {
-        strcpy(img -> description, temp);
+        strncpy(img -> description, temp, sizeof(char) * 255);
+        img -> description[255] = '\0';
         free(temp);
     }
 
@@ -1468,6 +2049,50 @@ Circle* JSONtoCircle(const char* svgString) {
     }
 
     return circle;
+}
+
+Path *DatatoPath (const char *svgString) {
+    if (svgString == NULL) {
+        return NULL;
+    }
+    
+    // initialize a new path with empty data and other attrs
+    Path *newPath = malloc(sizeof(Path) + (sizeof(char) * 65));
+    strcpy(newPath -> data, "");
+    newPath -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
+
+    // copy the first 64 characters of the path in svgString into path data
+    strncpy(newPath -> data, svgString, sizeof(char) * 64);
+    newPath -> data[64] = '\0';
+
+    return newPath; 
+}
+
+Attribute *JSONtoAttr (const char *svgString) {
+    if (svgString == NULL) {
+        return NULL;
+    }
+
+    // get the value of the the attribute from svgString and allocate enough memory
+    // for the flexible array item
+    Attribute *attr = NULL;
+    char *temp = getField((char *)svgString, "value");
+    if (temp != NULL) {
+        attr = malloc(sizeof(Attribute) + (sizeof(char) * strlen(temp) + 1));
+        strcpy(attr -> value, temp);
+        free(temp);
+    }
+    
+    // get the name of the attribute and return null
+    temp = NULL;
+    temp = getField((char *)svgString, "name");
+    if (temp != NULL) {
+        attr -> name = malloc(sizeof(char) * (strlen(temp) + 1));
+        strcpy(attr -> name, temp);
+        free(temp);
+    }
+
+    return attr; 
 }
 
 

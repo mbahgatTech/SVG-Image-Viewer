@@ -78,7 +78,8 @@ bool getUnits(char *units, char *string, float *value) {
     
     // copy units into passed by reference units array
     if (unitString != NULL) {
-        strcpy(units, unitString);
+        strncpy(units, unitString, sizeof(char) * 49);
+        units[49] = '\0';
     }
     // reuse unitString for value of float
     unitString = malloc(sizeof(char) * (strlen(string) + 1));
@@ -861,18 +862,54 @@ bool editAttributes(List *otherAttributes, Attribute *newAttribute) {
 
     void *data;
     ListIterator iter = createIterator(otherAttributes);
+    ListIterator iter2 = createIterator(otherAttributes);
 
     // check otherAttribute list if newAttribute already exists
     while ((data = nextElement(&iter)) != NULL) {
         Attribute *ptr = (Attribute *)data;
         if (strcmp(ptr -> name, newAttribute -> name) == 0) {
+            // free members of old attribute
+            free (ptr -> name);
+            ptr = NULL;
+
             // reallocate memory for the new value of the attribute
             ptr = realloc(ptr, sizeof(Attribute) + sizeof(char) * (strlen(newAttribute -> value) + 1));
             strcpy(ptr -> value, newAttribute -> value);
+            
+            // allocate memory for the name and copy new attribute's name into it
+            ptr -> name = malloc(sizeof(char) * (strlen(newAttribute -> name) + 1));
+            strcpy(ptr -> name, newAttribute -> name);
+
+            // insert the new attribute in the list
+            Node *node = initializeNode(ptr);
+            node -> next = iter2.current -> next;
+            node -> previous = iter2.current -> previous;
+
+            if(iter2.current && iter2.current -> previous) {
+                iter2.current -> previous -> next = node;
+            }
+            if (iter2.current && iter2.current -> next) {
+                iter2.current -> next -> previous = node; 
+            }
+            
+            // delete the old node containing the old attribute and set
+            // other attributes' head and tail accordingly
+            Node *old = iter2.current;
+            iter2.current = node;
+            if (otherAttributes -> head == old) {
+                otherAttributes -> head = iter2.current;
+            }
+            if (otherAttributes -> tail == old) {
+                otherAttributes -> tail = iter2.current;
+            }
+            free(old -> data);
+            free(old);
+            
 
             deleteAttribute(newAttribute);
             return true;
         }
+        nextElement(&iter2);
     }
 
     // insert the attribute at the end of the otherAtribute list
@@ -931,4 +968,27 @@ char *getField(char *jsonString, char *field) {
     free(temp2);
 
     return temp;
+}
+
+bool checkValidAttrs(List *attributes) {
+    if (attributes == NULL) {
+        return false;
+    }
+
+    // check all other attributes for invalid name pointer
+    void *attrs;
+    ListIterator iter2 = createIterator(attributes);
+
+    // iterate through all attributes in the list
+    while((attrs = nextElement(&iter2)) != NULL) {
+        Attribute *currAttr = (Attribute *)attrs;
+
+        // if name is null then its not a valid attribute list
+        if (currAttr -> name == NULL) {
+            // freeList(objects);
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -56,3 +56,5 @@ void createProps(xmlNode *node, List *attributes);
 bool editAttributes(List *otherAttributes, Attribute *newAttribute);
 
 char *getField(char *jsonString, char *field);
+
+bool checkValidAttrs(List *attributes);
