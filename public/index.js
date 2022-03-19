@@ -423,9 +423,7 @@ $(document).ready(function() {
         
         // loop through all the attributes and append their names and values 
         // to their respective fields
-        console.log(shape.attributes);
         for (let attr of shape.attributes) {
-            console.log(attr);
             $('#' + newId)
             .append (
                 $("<div/>")
@@ -491,7 +489,6 @@ $(document).ready(function() {
                 }
 
                 if (isNaN(file.rectList[index].y)) {
-                    console.log("HEER");
                     throw `Rectangle [${index + 1}] y value is not a valid number.`;
                 }
 
@@ -814,7 +811,6 @@ $(document).ready(function() {
         $("#log-panel").children(".file-log").each(function () {
             let child = $($(this).children("a")[0]);
             if (child.attr("href") === file.name) {
-                console.log(child.attr("href"));
                 $(this).replaceWith(`
                 <div id="newDiv1" class="file-log">
                     <a href="${file.name}" download="${file.name}">

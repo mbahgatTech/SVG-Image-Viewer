@@ -185,7 +185,6 @@ app.post('/post-attrs', function (req, res) {
       }
 
       // add rectangle to the file and check the response for errors
-      console.log(rect);
       let response = fileData.createShape("RECT", JSON.stringify(rect), "uploads/" + file.name);
       if (!response) {
         throw ('Invalid Rectangle core attribute input.');
