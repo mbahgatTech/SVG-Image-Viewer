@@ -604,6 +604,27 @@ $(document).ready(function() {
     });
     
     $(document).on('click', "#btn-submit-view", function() {
+        let currFile = getFile("#image");
+        let title = '';
+        let desc = '';
+
+        // get the title and description values from their entry boxes
+        $(".entryBox").each( function() {
+            if ($(this).attr('id') === "enter-title-1"){
+                title = $(this)[0].value;
+            }
+            else if ($(this).attr('id') === "enter-desc-1") {
+                desc = $(this)[0].value;
+            }
+        });  
+
+        // validate the title and desc lengths against the character limit
+        if (!checkTitleDesc(title, desc)) {
+            return;
+        }
+        currFile.title = title;
+        currFile.descr = desc;
+
         // loop through all the  attributes and add them to a JSON string
         let count2 = 0;
         let staticAttrs = document.querySelectorAll(".no-edit-attr");
@@ -665,17 +686,7 @@ $(document).ready(function() {
         // change the discard button to hide attributes
         $('#btn-hide').attr("value", "Hide Attributes")
         .css("background-color", "#9147ff");
-        
-        let currFile = getFile("#image");
-        // get the title and description values from their entry boxes
-        $(".entryBox").each( function() {
-            if ($(this).attr('id') === "enter-title-1"){
-                currFile.title = $(this)[0].value;
-            }
-            else if ($(this).attr('id') === "enter-desc-1") {
-                currFile.descr = $(this)[0].value;
-            }
-        });        
+              
         setShapes(currFile, shapes);
         
         attr = {};
@@ -1042,9 +1053,15 @@ $(document).ready(function() {
 
     $('#uploadForm').submit('/upload', function (action) {
         action.preventDefault();
+        
+        // check if the uploaded file is of type svg
+        let fileName = $('[name="uploadFile"]')[0].files[0].name;
+        if(!fileName.endsWith('.svg')) {
+            alert(`Invalid file type: ${fileName} isn't an SVG file.`);
+            return;
+        }
 
         // check if the uploaded file name already exists
-        let fileName = $('[name="uploadFile"]')[0].files[0].name;
         for (file of files) {
             // alert the user if the file already exists and dont proceed 
             // with the request
@@ -1058,7 +1075,60 @@ $(document).ready(function() {
         // the form which will result in the request being forwarded to the server
         $(this).unbind('submit').submit();
     });
+    
+    $('#create-svg-form').submit('/create', function (action) {
+        action.preventDefault();
+        
+        // check if the given file is an svg image
+        let fileName = $($(action.target).find('[name="name"]')[0]).val();
+        if(!fileName.endsWith('.svg')) {
+            alert(`Invalid file type: ${fileName} isn't an SVG file.`);
+            return;
+        }
 
+        // check if the title and desc go over the character limit we want 255
+        let title = $($(action.target).find('[name="title"]')[0]).val();
+        let desc = $($(action.target).find('[name="descr"]')[0]).val();
+        if(!checkTitleDesc(title, desc)) {
+            return;
+        }
+        
+        // check if the file name already exists on the server, otherwise
+        // give the user an alert
+        for (file of files) {
+            if (file.name == fileName) {
+                alert(`${fileName} already exists on the server, please rename the file before reupload.`);
+                return; // end the request with an alert
+            }
+        }
+
+        // if the file is unique then unbind this listener from
+        // the form which will result in the request being forwarded to the server
+        $(this).unbind('submit').submit();
+    });
+
+    function checkTitleDesc (title, descr) {
+        try {
+            // alert the user if the max number of characters exceeded in title or descr
+            if (title.length > 255) {
+                alert('ERROR: Title exceeded maximum number of characters (255).')
+                return false;
+            }
+            
+            if (descr.length > 255) {
+                alert('ERROR: Description exceeded maximum number of characters (255).')
+                return false;
+            }
+        }
+        catch(e) {
+            console.log(e.message);
+            alert('Internal error: failed to validate input.');
+            return false;
+        }
+
+        return true;
+    }
+    
     $(document).on('click', '#scale-btn', function () {
         try {
             // make a dropdown list for the image that will be scaled and input
@@ -1087,36 +1157,57 @@ $(document).ready(function() {
                                 </div> \
                             </div> \
                             <div class="panel-buttons" id="submit-shape-scale"> \
-                                <input type="submit" value="Save Shape" class="btn btn-secondary" id="btn-scale-shape"> \
+                                <input type="submit" value="Save Shapes" class="btn btn-secondary" id="btn-scale-shape"> \
                             </div> \
                         </div> \
                     </div>\
                 </form>');
                 
-                // add the scale div to the edit log section
-                $('#edit-panel').append(tempdiv);
-                $('#scale-btn').css("background-color", "#A80A01");
-                $('#scale-btn').text("Discard Scaling");
-                $('#scale-btn').attr("id", "scale-hide"); 
+            // add the scale div to the edit log section
+            $('#edit-panel').append(tempdiv);
+            $('#scale-btn').css("background-color", "#A80A01");
+            $('#scale-btn').text("Discard Scaling");
+            $('#scale-btn').attr("id", "scale-hide"); 
 
-                // add the file names to the image selector
-                for (let file of files) {
-                    $('#image3').append(
-                        $('<option/>').text(file.name)
-                    );
+            // add the file names to the image selector
+            for (let file of files) {
+                $('#image3').append(
+                    $('<option/>').text(file.name)
+                );
+            }
+
+            $('#scale-form')[0].addEventListener('submit', function (action) {
+                action.preventDefault();
+                
+                try {
+                    // check if the scale factors are numbers
+                    let rectScale = $($(action.target).find('[name="rects"]')[0]).val();
+                    let circScale = $($(action.target).find('[name="circs"]')[0]).val();
+                    
+                    // give an error alert to the user if scale factors are invalid
+                    if (!rectScale || rectScale.length <= 0 || isNaN(rectScale)) {
+                        alert(`ERROR: Rectangle scale factor is not a valid number.`);
+                        return;
+                    }
+                    if (!circScale || circScale.length <= 0 || isNaN(circScale)) {
+                        alert(`ERROR: Circle scale factor is not a valid number.`);
+                        return;
+                    }
                 }
+                catch (e) {
+                    console.log(e.message);
+                    alert('Internal error: failed to validate input.');
+                    return;
+                }
+
+                $(this).unbind('submit').submit();
+            });
         }
         catch (e) {
             console.log(e.message);
             alert("Failed to display the shape scaling panel.");
         }
     });
-
-    // $('#scale-form').submit('/scale-shape-form', function(action) {
-    //     action.preventDefault();
-
-    //     console.log(action);
-    // });
 
     $(document).on('click', '#scale-hide', function () {
         $('#scale-form').remove();
