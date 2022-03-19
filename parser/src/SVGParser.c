@@ -142,19 +142,34 @@ bool appendAttributeToFile (char *type, char *jsonString, int index, char *fileN
 
     // call set attribute on the svg struct using the given parameters
     if (strcmp(type, "RECT") == 0) {
-        setAttribute(new, RECT, index, attr);
+        if(!setAttribute(new, RECT, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
     }
     else if (strcmp(type, "CIRC") == 0) {
-        setAttribute(new, CIRC, index, attr);
+        if(!setAttribute(new, CIRC, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
     }
     else if (strcmp(type, "PATH") == 0) {
-        setAttribute(new, PATH, index, attr);
+        if(!setAttribute(new, PATH, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
     }
     else if (strcmp(type, "GROUP") == 0) {
-        setAttribute(new, GROUP, index, attr);
+        if(!setAttribute(new, GROUP, index, attr)) {
+            deleteSVG(new);
+            return false;
+        }
     }
     else if (strcmp(type, "SVG") == 0) {
-        setAttribute(new, SVG_IMG, 0, attr);
+        if(!setAttribute(new, SVG_IMG, 0, attr)) {
+            deleteSVG(new);
+            return false;
+        }
     }
     else {
         deleteSVG(new);
@@ -1184,7 +1199,7 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
         }
         // data is rectangle at elemIndex
         Rectangle *rect = (Rectangle *)data;
-        char units[50];
+        char *units = rect -> units;
         // check if newAttribute is one of the core attributes
         if(strcmp(newAttribute -> name, "x") == 0) {
             if (!getUnits(units, newAttribute -> value, &rect -> x)) {
@@ -1248,7 +1263,7 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
         }
         // data is circle at elemIndex
         Circle *circle = (Circle *)data;
-        char units[50];
+        char *units = circle -> units;
         // check if newAttribute is one of the core attributes
         if(strcmp(newAttribute -> name, "cx") == 0) {
             if(!getUnits(units, newAttribute -> value, &circle -> cx)) {
@@ -1258,7 +1273,7 @@ bool setAttribute(SVG* img, elementType elemType, int elemIndex, Attribute* newA
             free(newAttribute -> name);
             free(newAttribute);
         }
-        else if(strcmp(newAttribute -> name, "y") == 0) {
+        else if(strcmp(newAttribute -> name, "cy") == 0) {
             if(!getUnits(units, newAttribute -> value, &circle -> cy)) {
                 return false;
             }

@@ -1,4 +1,3 @@
-// Put all onload AJAX calls here, and event listeners
 $(document).ready(function() {
     // append all the files in /uploads to file log
     let files = [];
@@ -310,6 +309,11 @@ $(document).ready(function() {
                 attr.name = "height";
                 attr.value = file.rectList[i].h;
                 shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "units";
+                attr.value = file.rectList[i].units;
+                shape.attributes.push(attr);
             }
             else if (shape.type === "Circle"){
                 let index = i - file.rects;
@@ -335,6 +339,11 @@ $(document).ready(function() {
                 attr = {};
                 attr.name = "radius";
                 attr.value = file.circList[index].r;
+                shape.attributes.push(attr);
+
+                attr = {};
+                attr.name = "units";
+                attr.value = file.circList[index].units;
                 shape.attributes.push(attr);
             }
             else if (shape.type === "Group") {
@@ -474,11 +483,30 @@ $(document).ready(function() {
                 file.rectList[index].y = shape.attributes.filter(function(attr) { return attr.name === 'y'; })[0].value;
                 file.rectList[index].w = shape.attributes.filter(function(attr) { return attr.name === 'width'; })[0].value;
                 file.rectList[index].h = shape.attributes.filter(function(attr) { return attr.name === 'height'; })[0].value;
+                file.rectList[index].units = shape.attributes.filter(function(attr) { return attr.name === 'units'; })[0].value;
+                
+                // validate that the x,y,w and h values are all numbers
+                if (isNaN(file.rectList[index].x)) {
+                    throw `Rectangle [${index + 1}] x value is not a valid number.`;
+                }
+
+                if (isNaN(file.rectList[index].y)) {
+                    console.log("HEER");
+                    throw `Rectangle [${index + 1}] y value is not a valid number.`;
+                }
+
+                if (isNaN(file.rectList[index].w)) {
+                    throw `Rectangle [${index + 1}] width value is not a valid number.`;
+                }
+
+                if (isNaN(file.rectList[index].h)) {
+                    throw `Rectangle [${index + 1}] height value is not a valid number.`;
+                }
 
                 // push other attributes to the rects attrs list and filter out the required ones
                 file.rectsAttrsList.push([...shape.attributes]);
                 file.rectsAttrsList[index] = file.rectsAttrsList[index].filter(function (attr) { 
-                    return attr.name != 'x' && attr.name != 'y' && attr.name != 'width' && attr.name != 'height';
+                    return attr.name != 'x' && attr.name != 'y' && attr.name != 'width' && attr.name != 'height' && attr.name != 'units';
                 });
                 file.rectList[index].numAttr = file.rectsAttrsList[index].length;
             }
@@ -488,11 +516,25 @@ $(document).ready(function() {
                 file.circList[idx].cx = shape.attributes.filter(function(attr) { return attr.name === 'cx'; })[0].value;
                 file.circList[idx].cy = shape.attributes.filter(function(attr) { return attr.name === 'cy'; })[0].value;
                 file.circList[idx].r = shape.attributes.filter(function(attr) { return attr.name === 'radius'; })[0].value;
+                file.circList[idx].units = shape.attributes.filter(function(attr) { return attr.name === 'units'; })[0].value;
+
+                // validate that the x,y and r values are all numbers
+                if (isNaN(file.circList[idx].cx)) {
+                    throw `Circle [${idx + 1}] cx value is not a valid number.`;
+                }
+
+                if (isNaN(file.circList[idx].cy)) {
+                    throw `Circle [${idx + 1}] cy value is not a valid number.`;
+                }
+
+                if (isNaN(file.circList[idx].r)) {
+                    throw `Circle [${idx + 1}] radius value is not a valid number.`;
+                }
 
                 // push other attributes to the circs attrs list and filter out the required ones
                 file.circsAttrsList.push([...shape.attributes]);
                 file.circsAttrsList[idx] = file.circsAttrsList[idx].filter(function (attr) { 
-                    return attr.name != 'cx' && attr.name != 'cy' && attr.name != 'radius';
+                    return attr.name != 'cx' && attr.name != 'cy' && attr.name != 'radius' && attr.name != 'units';
                 });
                 file.circList[idx].numAttr = file.circsAttrsList[idx].length;
             }
@@ -669,12 +711,12 @@ $(document).ready(function() {
                     
                     // give the current attribute th value of this.
                     attr.value = $(this)[0].value;
-                    if (!attr.value) {
-                        console.log("Failed to save the attributes due to undefined values.");
-                        alert("ERROR: Failed to save attributes!")
+                    if (!attr.value && attr.name != 'units') {
+                        console.log("Failed to save the attributes due to empty values.");
+                        alert("ERROR: Some or all core attributes are empty, please fill these values before resubmission!")
                         return;
                     }
-    
+
                     // update the JSON array of attributes with the new attr
                     shape.attributes.push(attr);
                     attr = {};
@@ -686,8 +728,15 @@ $(document).ready(function() {
         // change the discard button to hide attributes
         $('#btn-hide').attr("value", "Hide Attributes")
         .css("background-color", "#9147ff");
-              
-        setShapes(currFile, shapes);
+        
+        try {
+            setShapes(currFile, shapes);
+        }
+        catch(exc) {
+            alert(exc);
+            console.log(`Invalid attributes were found while setting shapes.`);
+            return;
+        }
         
         attr = {};
         count2 = 0;

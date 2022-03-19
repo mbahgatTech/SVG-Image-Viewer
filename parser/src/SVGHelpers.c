@@ -78,7 +78,8 @@ bool getUnits(char *units, char *string, float *value) {
     
     // copy units into passed by reference units array
     if (unitString != NULL) {
-        strcpy(units, unitString);
+        strncpy(units, unitString, sizeof(char) * 49);
+        units[49] = '\0';
     }
     // reuse unitString for value of float
     unitString = malloc(sizeof(char) * (strlen(string) + 1));

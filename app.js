@@ -109,7 +109,7 @@ app.get('/get-files', function(req , res){
 
       // add the file size to the list
       let stats = fs.statSync(__dirname + '/uploads/' + file);
-      currFile.size = stats.size + "B";
+      currFile.size = Math.round(parseFloat(stats.size) / 1000.0) + "KB";
 
       // get the svg file properties from the c API
       let otherData = fileData.fileToJSON("uploads/" + file);
@@ -185,6 +185,7 @@ app.post('/post-attrs', function (req, res) {
       }
 
       // add rectangle to the file and check the response for errors
+      console.log(rect);
       let response = fileData.createShape("RECT", JSON.stringify(rect), "uploads/" + file.name);
       if (!response) {
         throw ('Invalid Rectangle core attribute input.');
