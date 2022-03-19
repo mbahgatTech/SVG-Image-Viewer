@@ -18,7 +18,7 @@ ifeq ($(UNAME), Darwin)
 	XML_PATH = /System/Volumes/Data/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/libxml2
 endif
 
-parser: libsvgparser.so main 
+parser: libsvgparser.so 
 
 libsvgparser.so: $(PARSER_OBJ_FILES) $(BIN)LinkedListAPI.o
 	cd .. && gcc -shared -o libsvgparser.so $(SHARED_LIB_FILES) parser/$(BIN)LinkedListAPI.o -lxml2 -lm && cd parser
