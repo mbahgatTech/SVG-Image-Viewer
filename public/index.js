@@ -485,19 +485,25 @@ $(document).ready(function() {
                 
                 // validate that the x,y,w and h values are all numbers
                 if (isNaN(file.rectList[index].x)) {
-                    throw `Rectangle [${index + 1}] x value is not a valid number.`;
+                    throw `Rectangle ${index + 1} x value is not a valid number.`;
                 }
 
                 if (isNaN(file.rectList[index].y)) {
-                    throw `Rectangle [${index + 1}] y value is not a valid number.`;
+                    throw `Rectangle ${index + 1} y value is not a valid number.`;
                 }
 
                 if (isNaN(file.rectList[index].w)) {
-                    throw `Rectangle [${index + 1}] width value is not a valid number.`;
+                    throw `Rectangle ${index + 1} width value is not a valid non-negative number.`;
+                }
+                else if (file.rectList[index].w < 0) {
+                    throw `Rectangle ${index + 1} width value is not a valid non-negative number.`;
                 }
 
                 if (isNaN(file.rectList[index].h)) {
-                    throw `Rectangle [${index + 1}] height value is not a valid number.`;
+                    throw `Rectangle ${index + 1} height value is not a valid non-negative number.`;
+                }
+                else if (file.rectList[index].h < 0) {
+                    throw `Rectangle ${index + 1} height value is not a valid non-negative number.`;
                 }
 
                 // push other attributes to the rects attrs list and filter out the required ones
@@ -517,15 +523,18 @@ $(document).ready(function() {
 
                 // validate that the x,y and r values are all numbers
                 if (isNaN(file.circList[idx].cx)) {
-                    throw `Circle [${idx + 1}] cx value is not a valid number.`;
+                    throw `Circle ${idx + 1} cx value is not a valid number.`;
                 }
 
                 if (isNaN(file.circList[idx].cy)) {
-                    throw `Circle [${idx + 1}] cy value is not a valid number.`;
+                    throw `Circle ${idx + 1} cy value is not a valid number.`;
                 }
 
                 if (isNaN(file.circList[idx].r)) {
-                    throw `Circle [${idx + 1}] radius value is not a valid number.`;
+                    throw `Circle ${idx + 1} radius value is not a valid non-negative number.`;
+                }
+                else if (file.circList[idx].r < 0) {
+                    throw `Circle ${idx + 1} radius value is not a valid non-negative number.`;
                 }
 
                 // push other attributes to the circs attrs list and filter out the required ones
@@ -867,25 +876,31 @@ $(document).ready(function() {
                                 <div class="file-log">\
                                     <div class="view-attrs2 no-edit-attr-shapes">x</div>\
                                     <div class="view-attrs2"> \
-                                        <input type="text" name="x" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
+                                        <input type="text" name="x" class="form-control entry-box3" value="0.5" placeholder="Enter x"> \
                                     </div> \
                                 </div> \
                                 <div class="file-log"> \
                                     <div class="view-attrs2 no-edit-attr-shapes">y</div> \
                                     <div class="view-attrs2"> \
-                                        <input type="text" name="y" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
+                                        <input type="text" name="y" class="form-control entry-box3" value="0.5" placeholder="Enter y"> \
                                     </div> \
                                 </div> \
                                 <div class="file-log"> \
                                     <div class="view-attrs2 no-edit-attr-shapes">Width</div> \
                                     <div class="view-attrs2"> \
-                                        <input type="text" name="width" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
+                                        <input type="text" name="width" class="form-control entry-box3" value="0.5" placeholder="Enter Width"> \
                                     </div> \
                                 </div> \
                                 <div class="file-log"> \
                                     <div class="view-attrs2 no-edit-attr-shapes">Height</div> \
                                     <div class="view-attrs2"> \
-                                        <input type="text" name="height" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
+                                        <input type="text" name="height" class="form-control entry-box3" value="0.5" placeholder="Enter Height"> \
+                                    </div> \
+                                </div>\
+                                <div class="file-log"> \
+                                    <div class="view-attrs2 no-edit-attr-shapes">units</div> \
+                                    <div class="view-attrs2"> \
+                                        <input type="text" name="units" class="form-control entry-box3" value="cm" placeholder="Enter units"> \
                                     </div> \
                                 </div>\
                                 <div class="panel-buttons" id="shape-del"> \
@@ -939,25 +954,31 @@ $(document).ready(function() {
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">x</div>\
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="x" class="form-control entry-box3" value="0.5cm" placeholder="Enter x"> \
+                                    <input type="text" name="x" class="form-control entry-box3" value="0.5" placeholder="Enter x"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">y</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="y" class="form-control entry-box3" value="0.5cm" placeholder="Enter y"> \
+                                    <input type="text" name="y" class="form-control entry-box3" value="0.5" placeholder="Enter y"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">Width:</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="width" class="form-control entry-box3" value="0.5cm" placeholder="Enter Width"> \
+                                    <input type="text" name="width" class="form-control entry-box3" value="0.5" placeholder="Enter Width"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">Height:</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="height" class="form-control entry-box3" value="0.5cm" placeholder="Enter Height"> \
+                                    <input type="text" name="height" class="form-control entry-box3" value="0.5" placeholder="Enter Height"> \
+                                </div> \
+                            </div>\
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">units</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" name="units" class="form-control entry-box3" value="cm" placeholder="Enter units"> \
                                 </div> \
                             </div>\
                             <div class="panel-buttons" id="shape-del"> \
@@ -978,21 +999,27 @@ $(document).ready(function() {
                             <div class="file-log">\
                                 <div class="view-attrs2 no-edit-attr-shapes">cx</div>\
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="cx" class="form-control entry-box3" value="0.5cm" placeholder="Enter cx"> \
+                                    <input type="text" name="cx" class="form-control entry-box3" value="0.5" placeholder="Enter cx"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">cy</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="cy" class="form-control entry-box3" value="0.5cm" placeholder="Enter cy"> \
+                                    <input type="text" name="cy" class="form-control entry-box3" value="0.5" placeholder="Enter cy"> \
                                 </div> \
                             </div> \
                             <div class="file-log"> \
                                 <div class="view-attrs2 no-edit-attr-shapes">r</div> \
                                 <div class="view-attrs2"> \
-                                    <input type="text" name="r" class="form-control entry-box3" value="0.5cm" placeholder="Enter r"> \
+                                    <input type="text" name="r" class="form-control entry-box3" value="0.5" placeholder="Enter r"> \
                                 </div> \
                             </div> \
+                            <div class="file-log"> \
+                                <div class="view-attrs2 no-edit-attr-shapes">units</div> \
+                                <div class="view-attrs2"> \
+                                    <input type="text" name="units" class="form-control entry-box3" value="cm" placeholder="Enter units"> \
+                                </div> \
+                            </div>\
                             <div class="panel-buttons" id="shape-del"> \
                                 <button type="button" class="btn btn-secondary btn-del-shape">Delete Shape</button> \
                             </div> \
@@ -1120,7 +1147,7 @@ $(document).ready(function() {
         // the form which will result in the request being forwarded to the server
         $(this).unbind('submit').submit();
     });
-    
+
     $('#create-svg-form').submit('/create', function (action) {
         action.preventDefault();
         
@@ -1146,11 +1173,33 @@ $(document).ready(function() {
                 return; // end the request with an alert
             }
         }
+        
+        // alert the user if any of the input values are invalid numbers
+        try { validateShapeInput(action) }
+        catch (e) {
+            alert(e);
+            return;
+        }
 
         // if the file is unique then unbind this listener from
         // the form which will result in the request being forwarded to the server
         $(this).unbind('submit').submit();
     });
+
+    function validateShapeInput(action) {
+        $($(action.target).find(`[name="x"],[name="y"],[name="width"],[name="height"],
+            [name="cx"],[name="cy"],[name="r"]`)).each(function () {
+            // check if any of these values are non numbers and throw an exception if true
+            if (isNaN($(this).val())) {
+                throw `ERROR: All "${$(this).attr('name')}" values need to be valid numbers.`;
+            }
+            else if(($(this).attr('name') === 'r' || $(this).attr('name') === 'width' || 
+            $(this).attr('name') === 'height') && ($(this).val() < 0)) {
+                // radius, width and height values can't be negative, throw exception if true
+                throw `ERROR: All "${$(this).attr('name')}" values need to be valid non-negative numbers.`;
+            }
+        });
+    }
 
     function checkTitleDesc (title, descr) {
         try {
@@ -1173,6 +1222,21 @@ $(document).ready(function() {
 
         return true;
     }
+
+    $(document).on('submit', '#add-form', function(action) {
+        action.preventDefault();
+
+        // alert the user if any of the input values are invalid numbers
+        try { validateShapeInput(action) }
+        catch (e) {
+            alert(e);
+            return;
+        }
+
+        // if the input data is valid then proceed with the request submission
+        $(document).off('submit', '#add-form', undefined);
+        $('#add-form').trigger('submit');
+    }); 
     
     $(document).on('click', '#scale-btn', function () {
         try {
@@ -1234,8 +1298,17 @@ $(document).ready(function() {
                         alert(`ERROR: Rectangle scale factor is not a valid number.`);
                         return;
                     }
+                    else if (rectScale < 0) {
+                        alert(`ERROR: Rectangle scale factor is not a valid number. Scale factor can't be negative.`);
+                        return;
+                    }
+
                     if (!circScale || circScale.length <= 0 || isNaN(circScale)) {
                         alert(`ERROR: Circle scale factor is not a valid number.`);
+                        return;
+                    }
+                    else if (circScale < 0) {
+                        alert(`ERROR: Circle scale factor is not a valid number. Scale factor can't be negative.`);
                         return;
                     }
                 }
