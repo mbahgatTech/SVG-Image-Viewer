@@ -61,8 +61,13 @@ char *floatToString(float number) {
 }
 
 bool getUnits(char *units, char *string, float *value) {
-    if (string == NULL || units == NULL || (!isdigit(string[0]) && string[0] != '.')) {
+    if (string == NULL || units == NULL || (!isdigit(string[0]) && string[0] != '.' && string[0] != '-')) {
         return false; // indicates error
+    }
+    
+    bool negativeVal = false;
+    if (string[0] == '-') {
+        negativeVal = true;
     }
 
     char *unitString = NULL; 
@@ -85,9 +90,21 @@ bool getUnits(char *units, char *string, float *value) {
     unitString = malloc(sizeof(char) * (strlen(string) + 1));
     strcpy(unitString, string); //now u can exclude units from the string
     unitString[i] = '\0';
-
+    
+    // remove the negative sign from the beginning of the string
+    if (negativeVal) {
+        char *floatString = unitString + sizeof(char);
+        strcpy(unitString, floatString);
+    }
+    
     *value = atof(unitString);
     free(unitString);
+    
+    // negate value if the string originally begun with
+    // a negative sign
+    if (negativeVal) {
+        *value = *value * (-1);
+    }
 
     return true;
 }
