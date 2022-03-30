@@ -1581,14 +1581,10 @@ char* pathToJSON(const Path *p) {
         return jsonString;
     }
     
-    // copy up to 64 characters of the d attribute into jsonString 
-    char *temp = malloc(sizeof(char) * 65); 
-    strncpy(temp, p -> data, sizeof(char) * 64);
+    // copy the d attribute into jsonString 
+    char *temp = malloc(sizeof(char) * (strlen(p -> data) + 1)); 
+    strcpy(temp, p -> data);
 
-    // truncate data after 64 chars
-    if (strlen(p -> data) >= 64) {
-        temp[64] = '\0';
-    }
     jsonString = realloc(jsonString, sizeof(char) * (strlen(jsonString) + 
                         strlen("\"d\":\"\"") + strlen(temp) + 1));
     strcpy(jsonString, "{");
@@ -2057,13 +2053,12 @@ Path *DatatoPath (const char *svgString) {
     }
     
     // initialize a new path with empty data and other attrs
-    Path *newPath = malloc(sizeof(Path) + (sizeof(char) * 65));
+    Path *newPath = malloc(sizeof(Path) + (sizeof(char) * (strlen(svgString) + 1)));
     strcpy(newPath -> data, "");
     newPath -> otherAttributes = initializeList(&attributeToString, &deleteAttribute, &compareAttributes);
 
-    // copy the first 64 characters of the path in svgString into path data
-    strncpy(newPath -> data, svgString, sizeof(char) * 64);
-    newPath -> data[64] = '\0';
+    // copy svgString into path data
+    strcpy(newPath -> data, svgString);
 
     return newPath; 
 }

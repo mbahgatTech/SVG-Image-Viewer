@@ -20,7 +20,7 @@ const fs = require('fs');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
 // Important, pass in port as in `npm run dev 1234`, do not change
-const portNum = process.argv[2];
+const portNum = process.env.PORT || 5000;
 
 // Send HTML at root, do not change
 app.get('/',function(req,res){
@@ -109,7 +109,7 @@ app.get('/get-files', function(req , res){
 
       // add the file size to the list
       let stats = fs.statSync(__dirname + '/uploads/' + file);
-      currFile.size = Math.round(parseFloat(stats.size) / 1000.0) + "KB";
+      currFile.size = Math.round(parseFloat(stats.size) / 1024.0) + "KB";
 
       // get the svg file properties from the c API
       let otherData = fileData.fileToJSON("uploads/" + file);
@@ -349,12 +349,14 @@ app.post('/add-shape-form', function (req, res) {
     jsonObj.y = req.body.y;
     jsonObj.w = req.body.width;
     jsonObj.h = req.body.height;
+    jsonObj.units = req.body.units;
   }
   else if (req.body.shape === 'Circle') {
     type = 'CIRC';
     jsonObj.cx = req.body.cx;
     jsonObj.cy = req.body.cy;
     jsonObj.r = req.body.r;
+    jsonObj.units = req.body.units;
   }
   else if (req.body.shape === 'Path') {
     type = 'PATH';
@@ -391,6 +393,7 @@ app.post('/create', function (req, res) {
           svgJSON.y = req.body.y[i];
           svgJSON.w = req.body.width[i];
           svgJSON.h = req.body.height[i];
+          svgJSON.units = req.body.units[i];
 
           fileData.createShape("RECT", JSON.stringify(svgJSON), "uploads/" + req.body.name);
           svgJSON = {};
@@ -402,6 +405,7 @@ app.post('/create', function (req, res) {
         svgJSON.y = req.body.y;
         svgJSON.w = req.body.width;
         svgJSON.h = req.body.height;
+        svgJSON.units = req.body.units;
 
         fileData.createShape("RECT", JSON.stringify(svgJSON), "uploads/" + req.body.name);
         svgJSON = {};
@@ -415,6 +419,7 @@ app.post('/create', function (req, res) {
           svgJSON.cx = req.body.cx[i];
           svgJSON.cy = req.body.cy[i];
           svgJSON.r = req.body.r[i];
+          svgJSON.units = req.body.units[i];
 
           fileData.createShape("CIRC", JSON.stringify(svgJSON), "uploads/" + req.body.name);
           svgJSON = {};
@@ -425,6 +430,7 @@ app.post('/create', function (req, res) {
         svgJSON.cx = req.body.cx;
         svgJSON.cy = req.body.cy;
         svgJSON.r = req.body.r;
+        svgJSON.units = req.body.units;
 
         fileData.createShape("CIRC", JSON.stringify(svgJSON), "uploads/" + req.body.name);
         svgJSON = {};
@@ -459,12 +465,14 @@ app.post('/create', function (req, res) {
     svgJSON.y = req.body.y;
     svgJSON.w = req.body.width;
     svgJSON.h = req.body.height;
+    svgJSON.units = req.body.units;
   }
   else if (req.body.shape === 'Circle') {
     type = 'CIRC';
     svgJSON.cx = req.body.cx;
     svgJSON.cy = req.body.cy;
     svgJSON.r = req.body.r;
+    svgJSON.units = req.body.units;
   }
   else if (req.body.shape === 'Path') {
     type = 'PATH';
