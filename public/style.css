@@ -105,6 +105,7 @@ select {
     width: 13%;
     text-align: center;
     border: #4588ba;
+    overflow-wrap: break-word;
 }
 
 .fields {
